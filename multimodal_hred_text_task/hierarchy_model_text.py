@@ -1,23 +1,29 @@
-import os
+import numpy as np
 import math
 import sys
-import seq2seq
-import numpy as np
-from seq2seq import *
+import os
 from io import StringIO
 import tensorflow as tf
-from tensorflow.contrib import rnn
-from tensorflow.contrib.rnn import EmbeddingWrapper
 from tensorflow.python.ops import control_flow_ops
+from tensorflow.contrib import rnn
 from tensorflow.python.ops import variable_scope
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn_ops
+
+from helper_functions import get_decoder_embedding, linear
 
 sys.path.append(os.getcwd())
 
+import tensorflow.contrib.seq2seq as seq2seq
+from tensorflow.python.ops import rnn_cell_impl
 
-class Hierarchical_seq_model_text:
+
+class Hierarchical_seq_model_text():
     def __init__(self, task_type, text_embedding_size, image_embedding_size, image_rep_size, cell_size, cell_type,
                  batch_size, learning_rate, max_len, max_utter, max_images, patience, decoder_words, max_gradient_norm,
                  activation, output_activation):
+
         '''Parameter initialization '''
         self.task_type = task_type
         self.text_embedding_size = text_embedding_size
@@ -67,58 +73,88 @@ class Hierarchical_seq_model_text:
             self.b_enc_tgt_img = None
             self.tgt_scope_img = None  # scope for the target image encoder
 
-        def create_cell_scopes():
-            self.enc_cells_text = EmbeddingWrapper(self.cell_type(self.cell_size), self.decoder_words,
-                                                   self.text_embedding_size)
-            self.enc_scope_text = "encoder_text"
-            max_val = np.sqrt(6. / (self.image_rep_size + self.image_embedding_size))
-            self.W_enc_img = tf.Variable(
-                tf.random_uniform([self.image_rep_size, self.image_embedding_size], -1. * max_val, max_val),
-                name="W_enc_img")
-            self.b_enc_img = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]), name="b_enc_img")
-            self.enc_scope_img = "encoder_img"
-            self.enc_cells_utter = self.cell_type(self.cell_size)
-            self.enc_scope_utter = "encoder_utter"
-            if self.task_type == "text":
-                self.dec_cells_text = self.cell_type(self.cell_size)
-                self.dec_scope_text = "decoder_text"
-            if self.task_type == "image":
-                self.tgt_scope_img = "target_encoder_img"
-                self.W_enc_tgt_img = tf.Variable(
-                    tf.random_uniform([self.image_rep_size, self.image_embedding_size], -1. * max_val, max_val),
-                    name="W_enc_tgt_img")
-                self.b_enc_tgt_img = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]),
-                                                 name="b_enc_tgt_img")
-                max_val = np.sqrt(6. / (self.cell_size + self.image_embedding_size))
-                self.proj_scope_utter = "proj_utter"
-                self.W_proj_utter = tf.Variable(
-                    tf.random_uniform([self.cell_size, self.image_embedding_size], -1. * max_val, max_val),
-                    name="W_proj_utter")
-                self.b_proj_utter = tf.Variable(tf.constant(0., shape[self.image_embedding_size]), name="b_proj_utter")
+        # def create_cell_scopes():
+        #     # self.enc_cells_text = rnn_cell.EmbeddingWrapper(self.cell_type(self.cell_size), self.decoder_words,self.text_embedding_size)
+        #     self.enc_cells_text = rnn.EmbeddingWrapper(self.cell_type(self.cell_size), self.decoder_words,self.text_embedding_size)
+        #     self.enc_scope_text = "encoder_text"
+        #     max_val = np.sqrt(6. / (self.image_rep_size + self.image_embedding_size))
+        #     self.W_enc_img = tf.Variable(tf.random_uniform([self.image_rep_size, self.image_embedding_size], -1. * max_val, max_val),name="W_enc_img")
+        #     self.b_enc_img = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]), name="b_enc_img")
+        #     self.enc_scope_img = "encoder_img"
+        #     self.enc_cells_utter = self.cell_type(self.cell_size)
+        #     self.enc_scope_utter = "encoder_utter"
+        #     if self.task_type == "text":
+        #         self.dec_cells_text = self.cell_type(self.cell_size)
+        #         self.dec_scope_text = "decoder_text"
+        #     if self.task_type == "image":
+        #         self.tgt_scope_img = "target_encoder_img"
+        #         self.W_enc_tgt_img = tf.Variable(tf.random_uniform([self.image_rep_size, self.image_embedding_size], -1. * max_val, max_val),name="W_enc_tgt_img")
+        #         self.b_enc_tgt_img = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]),name="b_enc_tgt_img")
+        #         max_val = np.sqrt(6. / (self.cell_size + self.image_embedding_size))
+        #         self.proj_scope_utter = "proj_utter"
+        #         self.W_proj_utter = tf.Variable(tf.random_uniform([self.cell_size, self.image_embedding_size], -1. * max_val, max_val),name="W_proj_utter")
+        #         self.b_proj_utter = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]), name="b_proj_utter")
 
-        create_cell_scopes()
+        self.create_cell_scopes()
+
+    def create_cell_scopes(self):
+        # self.enc_cells_text = rnn_cell.EmbeddingWrapper(self.cell_type(self.cell_size), self.decoder_words,self.text_embedding_size)
+        self.enc_cells_text = rnn.EmbeddingWrapper(self.cell_type(self.cell_size), self.decoder_words,
+                                                   self.text_embedding_size)
+        self.enc_scope_text = "encoder_text"
+        max_val = np.sqrt(6. / (self.image_rep_size + self.image_embedding_size))
+        self.W_enc_img = tf.Variable(
+            tf.random_uniform([self.image_rep_size, self.image_embedding_size], -1. * max_val, max_val),
+            name="W_enc_img")
+        self.b_enc_img = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]), name="b_enc_img")
+        self.enc_scope_img = "encoder_img"
+        self.enc_cells_utter = self.cell_type(self.cell_size)
+        self.enc_scope_utter = "encoder_utter"
+        if self.task_type == "text":
+            self.dec_cells_text = self.cell_type(self.cell_size)
+            self.dec_scope_text = "decoder_text"
+        if self.task_type == "image":
+            self.tgt_scope_img = "target_encoder_img"
+            self.W_enc_tgt_img = tf.Variable(
+                tf.random_uniform([self.image_rep_size, self.image_embedding_size], -1. * max_val, max_val),
+                name="W_enc_tgt_img")
+            self.b_enc_tgt_img = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]), name="b_enc_tgt_img")
+            max_val = np.sqrt(6. / (self.cell_size + self.image_embedding_size))
+            self.proj_scope_utter = "proj_utter"
+            self.W_proj_utter = tf.Variable(
+                tf.random_uniform([self.cell_size, self.image_embedding_size], -1. * max_val, max_val),
+                name="W_proj_utter")
+            self.b_proj_utter = tf.Variable(tf.constant(0., shape=[self.image_embedding_size]), name="b_proj_utter")
 
     def create_placeholder(self):
-        # self.encoder_img_inputs is a max_utter sized list of a max_images sized list of tensors of dimension batch_size * image_rep_size
+
+        # self.encoder_img_inputs is a max_utter sized list of a max_images sized list of tensors of dimension batch_size * image_rep_size (= 4096)
         self.encoder_img_inputs = [
             [tf.placeholder(tf.float32, [None, self.image_rep_size], name="encoder_img_inputs") for j in
              range(self.max_images)] for i in range(
                 self.max_utter)]  # list of tensor placeholders; altogether of dimension  (max_utter * max_images * image_rep_size * batch_size)
+
         # self.encoder_text_inputs is a max_utter sized list of a max_len sized list of tensors of dimension batch_size
         self.encoder_text_inputs = [
             [tf.placeholder(tf.int32, [None], name="encoder_text_inputs") for i in range(self.max_len)] for j in range(
                 self.max_utter)]  # list of list of tensor placeholders; altogether of dimension batch_size * max_utter * max_len
+
         if self.task_type == "text":
+
             # self.decoder_text_inputs is a max_len sized list of tensors of dimension batch_size
             self.decoder_text_inputs = [tf.placeholder(tf.int32, [None], name="decoder_text_inputs") for i in range(
                 self.max_len)]  # list of tensor placeholders of dimension batch_size * max_len
+
             # self.concat_dec_inputs is a max_len sized list of tensors of dimension batch_size * (cell_size+text_embedding_size)
             # self.concat_dec_inputs = [tf.placeholder(tf.int32, [None, self.cell_size+self.text_embedding_size], name="concat_dec_inputs") for i in range(self.max_len)]
+
             # self.text_weights is a max_len sized list of tensors of dimension batch_size
             self.text_weights = [tf.placeholder(tf.float32, [None], name="text_weights") for i in range(self.max_len)]
             self.feed_previous = tf.placeholder(tf.bool, name='feed_previous')
+
             # self.target_text is a max_len sized list of tensors of dimension batch_size
             self.target_text = [tf.placeholder(tf.int32, [None], name="target_text") for i in range(self.max_len)]
+
         elif self.task_type == "image":
             # self.target_img is of dimension  batch_size * image_rep_size
             self.target_img = tf.placeholder(tf.float32, [None, self.image_rep_size])  ####### THIS PART IS NOT COMPLETE
@@ -139,44 +175,66 @@ class Hierarchical_seq_model_text:
         # enc_img_states = tf.concat(0, self.encoder_img_inputs) ## check
         # self.encoder_text_inputs is of dimension (max_utter, max_len, batch_size)
         # self.encoder_img_inputs is of dimension (max_utter, max_images, batch_size, img_rep_size)
-        n_steps = self.max_len
-        enc_text_states = self.sentence_encoder(self.encoder_text_inputs)
+        # n_steps = self.max_len
+
         # enc_text_states is of dimension (max_utter, batch_size, cell_size)
-        enc_img_states = self.image_encoder(self.encoder_img_inputs)
+        enc_text_states = self.sentence_encoder(self.encoder_text_inputs)
+
         # enc_img_states is of dimension (max_utter, batch_size, (max_len*image_embedding_size))
-        enc_concat_text_img_states = self.concat_text_image(enc_text_states, enc_img_states)
+        enc_img_states = self.image_encoder(self.encoder_img_inputs)
+
         # enc_concat_text_img_states is of dimension (max_utter, batch_size, (cell_size+max_images*image_embedding_size))
-        enc_utter_states = self.utterance_encoder(enc_concat_text_img_states)
+        enc_concat_text_img_states = self.concat_text_image(enc_text_states, enc_img_states)
+
         # enc_utter_states is of dimension (cell_size, batch_size)
+        enc_utter_states = self.utterance_encoder(enc_concat_text_img_states)
+
         return enc_utter_states
 
     def image_encoder(self, enc_img_inputs):
-        # enc_img_inputs would be of dimension (max_utter * max_images * batch_size * img_rep_size)   ## check
+
+        # enc_img_inputs would be of dimension (max_utter * max_images * batch_size * img_rep_size)   ## Confirmed JY
         # W is of dimension (image_rep_size, image_embedding_size)
         # b is of dimension (1, image_embedding_size)
+
         enc_img_states = []
         with tf.variable_scope(self.enc_scope_img) as scope:
+
             for i, enc_img_input in enumerate(enc_img_inputs):
-                # enc_img_input is of dimension (max_images * batch_size * image_rep_size)
+                # enc_img_input is of dimension (max_images * batch_size * image_rep_size) # Confirmed JY
+                # enc_img_input is a list of tensors with length = max_images. Each tensor has shape [batch_size, image_rep_size] - Confirmed JY
+
+                # enc_img_states_i should end up being dimension (max_images * batch_size * image_embedding_size)
                 enc_img_states_i = []
+
                 for j, inp in enumerate(enc_img_input):
                     # inp is of dimension (batch_size * image_rep_size)
+
                     if i > 0 or j > 0:
                         scope.reuse_variables()
+
+                    # enc_img_state is of dimension (batch_size * image_embedding_size)
                     enc_img_state = tf.matmul(inp, self.W_enc_img) + self.b_enc_img
+
+                    # Set Activation
                     if self.activation is not None:
                         enc_img_state = self.activation(enc_img_state)
-                    # enc_img_state is of dimension (batch_size * image_embedding_size)
+
                     enc_img_states_i.append(enc_img_state)
-                # enc_img_states_i  is of dimension (max_images * batch_size * image_embedding_size)
+
+                # enc_img_states is of dimension (max_utter * max_images * batch_size * image_embedding_size)
                 enc_img_states.append(enc_img_states_i)
-        # enc_img_states is of dimension (max_utter * max_images * batch_size * image_embedding_size)
+
         concat_enc_img_states = []
+
+        # enc_img_states[i] is of dimension (max_images * batch_size * image_embedding_size)
+
         for i in range(0, len(enc_img_states)):
-            # enc_img_states[i] is of dimension (max_images * batch_size * image_embedding_size)
-            concat_enc_img_states.append(tf.concat(1, enc_img_states[i]))
-        # concat_enc_img_states the max_utter length list of tensors batch_size * (max_images * images_embedding_size)
-        # concat_enc_img_states is of dimension (max_utter * batch_size * (max_images*image_embedding_size))
+            # concat_enc_img_states the max_utter length list of tensors batch_size * (max_images * images_embedding_size)
+            # concat_enc_img_states is of dimension (max_utter * batch_size * (max_images*image_embedding_size))
+
+            concat_enc_img_states.append(tf.concat(enc_img_states[i], axis=1))
+
         return concat_enc_img_states
 
     def concat_text_image(self, enc_text_states, enc_img_states):
@@ -184,7 +242,7 @@ class Hierarchical_seq_model_text:
         # enc_img_states is of dimension (max_utter, batch_size, max_images*image_embedding_size)
         concat_text_image = []
         for i in range(len(enc_text_states)):
-            concat_text_image.append(tf.concat(1, [enc_text_states[i], enc_img_states[i]]))
+            concat_text_image.append(tf.concat([enc_text_states[i], enc_img_states[i]], axis=1))
         # concat_text_image is of dimension (max_utter, batch_size, cell_size + max_images*image_embedding_size)
         return concat_text_image
 
@@ -198,7 +256,7 @@ class Hierarchical_seq_model_text:
                     scope.reuse_variables()
                 # enc_inputs[i] is a max_len sized list of tensor of dimension (batch_size) ################# CHECK IF INDEXING OVER TF VARIABLE IS WORKING
                 _, states = rnn.static_rnn(self.enc_cells_text, enc_inputs[i], scope=scope, dtype=tf.float32)
-                # rnn.static_rnn takes a max_len sized list of tensors of dimension (batch_size * self.text_embedding_size) (after passing through the embedding wrapper)
+                # rnn.rnn takes a max_len sized list of tensors of dimension (batch_size * self.text_embedding_size) (after passing through the embedding wrapper)
                 # states is of dimension (batch_size, cell_size)
                 utterance_states.append(states)
         # utterance_states is of dimension (max_utter, batch_size, cell_size)
@@ -211,21 +269,25 @@ class Hierarchical_seq_model_text:
         with tf.variable_scope(self.enc_scope_utter) as scope:
             # init_state = self.enc_cells_utter.zero_state(self.batch_size, tf.float32)
             # enc_inputs is of dimension (max_utter, batch_size, cell_size+max_images*image_embedding_size)
-            # _, states = rnn.static_rnn(self.enc_cells_utter, enc_inputs, scope=scope, dtype=tf.float32)
+            # _, states = rnn.rnn(self.enc_cells_utter, enc_inputs, scope=scope, dtype=tf.float32)
             outputs, states = rnn.static_rnn(self.enc_cells_utter, enc_inputs, dtype=tf.float32, scope=scope)
-            # rnn.static_rnn takes a max_utter sized list of tensors of dimension (batch_size * cell_size+(max_images*image_embedding_size))
+            # rnn.rnn takes a max_utter sized list of tensors of dimension (batch_size * cell_size+(max_images*image_embedding_size))
             utterance_states = states
             utterance_outputs = outputs
         # utterance_states is of dimension (batch_size, cell_size)
         # self.tf_print(utterance_states)
         top_states = [array_ops.reshape(e, [-1, 1, self.enc_cells_utter.output_size]) for e in utterance_outputs]
-        attention_states = array_ops.concat(1, top_states)
+        attention_states = array_ops.concat(top_states, axis=1)
         # print attention_states
         return utterance_states, attention_states
 
     def hierarchical_decoder(self, utterance_output, attention_states, num_heads=1, initial_state_attention=False):
-        dec_outputs = self.decoder(self.decoder_text_inputs, utterance_output, attention_states, num_heads,
+        dec_outputs = self.decoder(self.decoder_text_inputs,
+                                   utterance_output,
+                                   attention_states,
+                                   num_heads,
                                    initial_state_attention)
+
         return dec_outputs
 
     def decode(self, concatenated_input, loop_fn, dec_cell, init_state, utterance_output, dec_scope, attention_states,
@@ -239,7 +301,7 @@ class Hierarchical_seq_model_text:
 
         def attention(query):
             ds = []
-            for a in xrange(num_heads):
+            for a in range(num_heads):
                 with variable_scope.variable_scope("Attention_%d" % a):
                     y = linear(query, attention_vec_size, True)
                     y = array_ops.reshape(y, [-1, 1, 1, attention_vec_size])
@@ -250,22 +312,27 @@ class Hierarchical_seq_model_text:
             return ds
 
         batch_attn_size = array_ops.pack([batch_size, attn_size])
-        attns = [array_ops.zeros(batch_attn_size, dtype=tf.float32) for _ in xrange(num_heads)]
+        attns = [array_ops.zeros(batch_attn_size, dtype=tf.float32) for _ in range(num_heads)]
         for a in attns:
             a.set_shape([None, attn_size])
         if initial_state_attention:
             attns = attention(initial_state)
+
+        from tensorflow.python.ops import rnn_cell_impl
+
         # concatenated_input is of dimension (max_len * batch_size * (cell_size+text_embedding_size))
         for i, inp in enumerate(concatenated_input):
             # inp is of dimension batch_size * (cell_size*text_embedding_size))
             if loop_fn is not None and prev is not None:
                 with tf.variable_scope("loop_function", reuse=True):
                     inp = loop_fn(prev, i)
-                    inp = tf.concat(1, [utterance_output, inp])
+                    inp = tf.concat([utterance_output, inp], axis=1)
             if i > 0:
                 dec_scope.reuse_variables()
             input_size = inp.get_shape().with_rank(2)[1]
+            # x = linear([inp] + attns, input_size, True)
             x = linear([inp] + attns, input_size, True)
+
             output, state = dec_cell(x, state, scope=dec_scope)
             # inp is of dimension batch_size * (cell_size*text_embedding_size))
             # state is of dimension batch_size * cell_size
@@ -276,7 +343,9 @@ class Hierarchical_seq_model_text:
             else:
                 attns = attention(state)
             with tf.variable_scope("AttnOutputProjection"):
+                # output = linear([output] + attns, output_size, True)
                 output = linear([output] + attns, output_size, True)
+
             outputs.append(output)
             if loop_fn is not None:
                 prev = output
@@ -295,7 +364,7 @@ class Hierarchical_seq_model_text:
             hidden_features = []
             v = []
             attention_vec_size = attn_size
-            for a in xrange(num_heads):
+            for a in range(num_heads):
                 k = variable_scope.get_variable("AttnW_%d" % a, [1, 1, attn_size, attention_vec_size])
                 hidden_features.append(nn_ops.conv2d(hidden, k, [1, 1, 1, 1], "SAME"))
                 v.append(variable_scope.get_variable("AttnV_%d" % a, [attention_vec_size]))
@@ -308,31 +377,37 @@ class Hierarchical_seq_model_text:
             biases = tf.get_variable("dec_biases", [self.decoder_words], initializer=tf.constant_initializer(0.0))
 
             def feed_previous_decode(feed_previous_bool):
-                dec_embed, loop_fn = seq2seq.get_decoder_embedding(decoder_inputs, self.decoder_words,
-                                                                   self.text_embedding_size,
-                                                                   output_projection=(weights, biases),
-                                                                   feed_previous=feed_previous_bool)
+
+                dec_embed, loop_fn = get_decoder_embedding(decoder_inputs, self.decoder_words,
+                                                           self.text_embedding_size,
+                                                           output_projection=(weights, biases),
+                                                           feed_previous=feed_previous_bool)
+
                 # dec_embed is of dimension max_len * batch_size * self.text_embedding_size
                 # utterance_output is of dimension  batch_size * cell_size
                 concatenated_input = self.get_dec_concat_ip(dec_embed, utterance_output)
+
                 dec_output, _ = self.decode(concatenated_input, loop_fn, self.dec_cells_text, init_state,
                                             utterance_output, scope, attention_states, batch_size, attn_size,
                                             attn_length, num_heads, v, hidden, hidden_features, initial_state_attention)
+
                 # dec_output is a max_len sized list of tensors of dimension batch_size * cell_size
                 return dec_output
 
             dec_output = control_flow_ops.cond(self.feed_previous, lambda: feed_previous_decode(True),
                                                lambda: feed_previous_decode(False))
             output_projection = (weights, biases)
+
             # weights is a tensor of dimension cell_size * decoder_words
             # bias is a tensor of dimension decoder_words
             for i in range(len(dec_output)):
                 dec_output[i] = tf.matmul(dec_output[i], output_projection[0]) + output_projection[1]
                 if self.output_activation is not None:
                     dec_output[i] = self.output_activation(dec_output[i])
-        # before the linear transformation, dec_output[i] is a tensor of dimension batch_size * cell_size
-        # weights is a tensor of dimension cell_size * decoder_words
-        # after the linear transformation, dec_output[i] is a tensor of dimension batch_size * decoder_words
+            # before the linear transformation, dec_output[i] is a tensor of dimension batch_size * cell_size
+            # weights is a tensor of dimension cell_size * decoder_words
+            # after the linear transformation, dec_output[i] is a tensor of dimension batch_size * decoder_words
+
         # dec_output is a max_len sized list of 2D tensors of dimension batch_size * decoder_words
         return dec_output
 
@@ -343,7 +418,7 @@ class Hierarchical_seq_model_text:
             # self.tf_print(inp)
             # inp is of dimension batch_size * self.text_embedding_size
             # utterance_output is of dimension  batch_size * cell_size
-            concat_dec_inputs.append(tf.concat(1, [utterance_output, inp]))
+            concat_dec_inputs.append(tf.concat([utterance_output, inp], axis=1))
         # self.concat_dec_inputs[i] is of dimension batch_size * (cell_size + self.text_embedding_size)
         # self.concat_dec_inputs is of dimension max_len * batch_size * (cell_size + self.text_embedding_size)
         return concat_dec_inputs
@@ -363,6 +438,7 @@ class Hierarchical_seq_model_text:
             utterance_output, attention_states = self.hierarchical_encoder()
             logits = self.hierarchical_decoder(utterance_output, attention_states)
             return logits
+
         elif self.task_type == "image":
             utterance_output = self.hierarchical_encoder()
             projected_utterance_output = self.project_utter_encoding(utterance_output)
@@ -378,13 +454,13 @@ class Hierarchical_seq_model_text:
         # logits is a max_len sized list of 2-D tensors of dimension batch_size * decoder_words
         # self.target_text is a max_len sized list of 1-D tensors of dimension batch_size
         # self.text_weights is a max_len sized list of 1-D tensors of dimension batch_size
-        losses = seq2seq.sequence_loss_by_example(logits, self.target_text, self.text_weights)
+        losses = tf.contrib.legacy_seq2seq.sequence_loss_by_example(logits, self.target_text, self.text_weights)
         # losses is a 1-D tensor of dimension batch_size
         return losses
 
     def loss_task_image(self, projected_utterance_output):
         target_image_embedding = self.target_image_encoder(self.target_img)
-        losses = cosine_distance(projected_utterance_output, target_image_embedding)
+        losses = self.cosine_distance(projected_utterance_output, target_image_embedding)
         return losses
 
     def project_utter_encoding(self, utter):

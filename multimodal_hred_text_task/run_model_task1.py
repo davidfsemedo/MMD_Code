@@ -1,17 +1,19 @@
 import os
 import sys
-import nltk
 import math
 import random
-import os.path
+import logging
+
 import numpy as np
 import pickle as pkl
-from params import *
-import tensorflow as tf
-from read_data_task1 import *
-from hierarchy_model_text import *
 
 sys.path.append(os.getcwd())
+import os.path
+from params_v2 import *
+from read_data_task1 import *
+from hierarchy_model_text import *
+import tensorflow as tf
+import read_data_task1
 
 
 def feeding_dict(model, inputs_text, inputs_image, target_text, decoder_text_inputs, text_weights, feed_prev):
@@ -19,15 +21,20 @@ def feeding_dict(model, inputs_text, inputs_image, target_text, decoder_text_inp
     for encoder_text_input, input_text in zip(model.encoder_text_inputs, inputs_text):
         for encoder_text_input_i, input_text_i in zip(encoder_text_input, input_text):
             feed_dict[encoder_text_input_i] = input_text_i
+
     for encoder_img_input, input_image in zip(model.encoder_img_inputs, inputs_image):
         for encoder_img_input_i, input_image_i in zip(encoder_img_input, input_image):
             feed_dict[encoder_img_input_i] = input_image_i
+
     for model_target_text_i, target_text_i in zip(model.target_text, target_text):
         feed_dict[model_target_text_i] = target_text_i
+
     for model_decoder_text_input, decoder_text_input in zip(model.decoder_text_inputs, decoder_text_inputs):
         feed_dict[model_decoder_text_input] = decoder_text_input
+
     for model_text_weight, text_weight in zip(model.text_weights, text_weights):
         feed_dict[model_text_weight] = text_weight
+
     feed_dict[model.feed_previous] = feed_prev
     return feed_dict
 
@@ -38,6 +45,7 @@ def check_dir(param):
         param:parameter dictionary.'''
     if not os.path.exists(param['logs_path']):
         os.makedirs(param['logs_path'])
+
     if not os.path.exists(param['model_path']):
         os.makedirs(param['model_path'])
 
@@ -46,9 +54,12 @@ def get_test_op(sess, model, batch_dict, param, logits, losses):
     test_batch_text, test_batch_image, batch_text_target, batch_decoder_input, batch_text_weight = get_batch_data(
         param['max_len'], param['max_images'], param['image_rep_size'], param['max_utter'], param['batch_size'],
         batch_dict)
+
     feed_dict = feeding_dict(model, test_batch_text, test_batch_image, batch_text_target, batch_decoder_input,
                              batch_text_weight, True)
+
     dec_op, loss = sess.run([logits, losses], feed_dict=feed_dict)
+
     sum_batch_loss = get_sum_batch_loss(loss)
     return dec_op, sum_batch_loss
 
@@ -63,6 +74,7 @@ def write_to_file(pred_op, true_op):
     with open(pred_file, 'w') as f_pred:
         for pred_sentence in pred_op:
             f_pred.write(pred_sentence.strip() + '\n')
+
     print('Test (true and predicted) output written to corresponding files')
 
 
@@ -74,7 +86,7 @@ def perform_test(sess, model, saver, model_file, get_pred_sentence, param, logit
     predicted_sentence = []
     test_loss = 0
     n_batches = len(test_data) / param['batch_size']
-    test_text_targets = load_valid_test_target(param['test_data_file'])
+    test_text_targets = read_data_task1.load_valid_test_target(param['test_data_file'])
     for i in range(n_batches):
         batch_dict = test_data[i * param['batch_size']:(i + 1) * param['batch_size']]
         test_op, sum_batch_loss = get_test_op(sess, model, batch_dict, param, logits, losses)
@@ -97,6 +109,7 @@ def run_training(param):
         else:
             feed_dict = feeding_dict(model, train_batch_text, train_batch_image, batch_text_target, batch_decoder_input,
                                      batch_text_weight, True)
+
         loss, dec_op, _ = sess.run([losses, logits, train_op], feed_dict=feed_dict)
         '''
         if step % param['show_grad_freq'] == 0:
@@ -135,53 +148,79 @@ def run_training(param):
                                                                                                  batch_target_word_ids,
                                                                                                  vocab)
         sys.stdout.flush()
-        print('shape of prob_true_words ', prob_true_words.shape)
-        sys.stdout.flush()
-        print_pred_true_op(batch_predicted_sentence, prob_predicted_words, prob_true_words, batch_text_targets, step,
-                           epoch, batch_valid_loss)
+
+        # Print Validation Results to Consol
+        # print_pred_true_op(batch_predicted_sentence, prob_predicted_words, prob_true_words, batch_text_targets, step, epoch, batch_valid_loss)
+
+        # Record Validation Sentences to Log File
+        record_val_results(batch_predicted_sentence, batch_text_targets, step, epoch, batch_valid_loss)
+
         return sum_batch_loss
 
     def evaluate(model, epoch, step, valid_data, valid_text_targets, vocab):
-        print('Validation started')
-        sys.stdout.flush()
+        print('Validation Started')
+
+        # Set validation log filename
+        logging.basicConfig(filename='./Target_Model/log/Val_Results_Epoch_{}_Step_{}.log'.format(epoch, step),
+                            level=logging.INFO)
+
         valid_loss = 0
         batch_predicted_sentence = []
         n_batches = int(math.ceil(float(len(valid_data)) / float(param['batch_size'])))
+
         for i in range(n_batches):
+            if i % 10 == 0:
+                print('Validating: Epoch {}, Batch {}'.format(epoch, i))
+
             batch_dict = valid_data[i * param['batch_size']:(i + 1) * param['batch_size']]
             batch_target_word_ids = valid_text_targets[i * param['batch_size']:(i + 1) * param['batch_size']]
             batch_target_sentences = map_id_to_word(batch_target_word_ids, vocab)
             sum_batch_loss = perform_evaluation(model, batch_dict, batch_target_word_ids, batch_target_sentences, epoch,
                                                 step, vocab)
             valid_loss = valid_loss + sum_batch_loss
+
+        # Remove the log handlers
+        log = logging.getLogger()
+        for hdlr in log.handlers[:]:
+            log.removeHandler(hdlr)
+
         return float(valid_loss) / float(len(valid_data))
 
     def print_pred_true_op(pred_op, prob_pred, prob_true, true_op, step, epoch, batch_valid_loss):
-
-        for iter_num in range(0, len(true_op), 100):
+        for i in range(0, len(true_op), 100):
             print("true sentence in step " + str(step) + " of epoch " + str(epoch) + " is:")
             sys.stdout.flush()
-            print(true_op[iter_num])
-
+            print(true_op[i])
             print("\n")
             print("predicted sentence in step " + str(step) + " of epoch " + str(epoch) + " is:")
             sys.stdout.flush()
-            print(pred_op[iter_num])
-
+            print(pred_op[i])
             print("\n")
             print("prob of predicted words in step " + str(step) + " of epoch " + str(epoch) + " is:")
             sys.stdout.flush()
-            print(prob_pred[iter_num])
-
+            print(prob_pred[i])
             print("\n")
             print("prob of true words in step " + str(step) + " of epoch " + str(epoch) + " is:")
             sys.stdout.flush()
-            print(prob_true[iter_num])
-
+            print(prob_true[i])
             print("\n")
+            # print "crossent  in step "+str(step)+" of epoch "+str(epoch)+" is:"
+            # sys.stdout.flush()
+            # print sum([math.log(x+1e-12) for x in prob_true[i]])
+            # print "\n"
             sys.stdout.flush()
-            print("loss for the pair of true and predicted sentences", str(batch_valid_loss[iter_num]))
+            print("loss for the pair of true and predicted sentences", str(batch_valid_loss[i]))
             print("\n")
+
+    def record_val_results(pred_op, true_op, step, epoch, batch_valid_loss):
+
+        # Add true and predicted validation sentences to log file
+        for i in range(0, len(true_op), 100):
+            logging.info('Step {}, Epoch {}'.format(step, epoch))
+            logging.info('True: {}'.format(true_op[i]))
+            logging.info('Pred: {}'.format(pred_op[i]))
+            logging.info('Pair Loss = {}'.format(batch_valid_loss[i]))
+            logging.info('----------------------------------------------------------')
 
     def map_id_to_word(word_indices, vocab):
         sentence_list = []
@@ -223,22 +262,29 @@ def run_training(param):
         pred_sentence_list = map_id_to_word(max_probs_index, vocab)
         return pred_sentence_list, max_probs, true_op_prob
 
-    train_data = pkl.load(open(param['train_data_file']))
+    def load_pkl(filename):
+        with open(filename, 'rb') as f:
+            file = pkl.load(f)
+        return file
+
+    train_data = load_pkl(param['train_data_file'])
+    print(param['image_annoy_dir'])
     print('Train dialogue dataset loaded')
     sys.stdout.flush()
-    valid_data = pkl.load(open(param['valid_data_file']))
+    valid_data = load_pkl(param['valid_data_file'])
     print('Valid dialogue dataset loaded')
     sys.stdout.flush()
-    vocab = pkl.load(open(param['vocab_file'], "rb"))
+    vocab = load_pkl(param['vocab_file'])
     vocab_size = len(vocab)
     param['decoder_words'] = vocab_size
-    valid_text_targets = load_valid_test_target(valid_data)
+    valid_text_targets = read_data_task1.load_valid_test_target(valid_data)
     print('valid target sentence list loaded')
     print('writing terminal output to file')
     f_out = open(param['terminal_op'], 'w')
-    sys.stdout = f_out
+    # sys.stdout = f_out
     check_dir(param)
-    load_image_representation(param['image_annoy_dir'])
+
+    # load_image_representation(param['image_annoy_dir'])
     n_batches = int(math.ceil(float(len(train_data)) / float(param['batch_size'])))
     print('number of batches ', n_batches, 'len train data ', len(train_data), 'batch size', param['batch_size'])
     model_file = os.path.join(param['model_path'], "best_model")
@@ -258,7 +304,16 @@ def run_training(param):
         saver = tf.train.Saver()
         init = tf.initialize_all_variables()
         sess = tf.Session()
+
+        tb_placeholder = tf.placeholder(tf.float16, shape=None)
+
+        tb_training_loss = tf.summary.scalar('Training Loss', tb_placeholder)
+        tb_validation_loss = tf.summary.scalar('Validation Loss', tb_placeholder)
+
+        tb_writer = tf.summary.FileWriter('./tensorboard/')
+
         old_model_file = None
+
         if len(os.listdir(param['model_path'])) > 0:
             old_model_file = None
             try:
@@ -282,34 +337,54 @@ def run_training(param):
         print('printing all', len(all_var), ' TF variables:')
         for var in all_var:
             print(var.name, var.get_shape())
-        print('training started')
+
+        print('Training Started')
         sys.stdout.flush()
         last_overall_avg_train_loss = None
         overall_step_count = 0
+
         for epoch in range(param['max_epochs']):
             random.shuffle(train_data)
             train_loss = 0
             for i in range(n_batches):
+
+                # Print Update
+                if i % 10 == 0:
+                    print('Training: Epoch {}, Batch {}'.format(epoch, i))
+
                 overall_step_count = overall_step_count + 1
                 train_batch_dict = train_data[i * param['batch_size']:(i + 1) * param['batch_size']]
                 sum_batch_loss = perform_training(model, train_batch_dict, overall_step_count)
                 avg_batch_loss = sum_batch_loss / float(param['batch_size'])
-                if overall_step_count % param['print_train_freq'] == 0:
-                    print('Epoch  %d Step %d train loss (avg over batch) =%.6f' % (epoch, i, avg_batch_loss))
-                    sys.stdout.flush()
+                # print('Average_batch_loss = {}, {} out of {}'.format(avg_batch_loss, i, n_batches))
+
                 train_loss = train_loss + sum_batch_loss
-                avg_train_loss = float(train_loss) / float(i + 1)
+
+                # Store average training loss in tensorboard
+                if overall_step_count % param['tb_store_loss_freq'] == 0:
+                    avg_train_loss = float(train_loss) / float(i + 1)
+
+                    print('Avg Train Loss = {}'.format(avg_train_loss))
+                    _loss = sess.run(tb_training_loss, feed_dict={tb_placeholder: avg_train_loss})
+                    tb_writer.add_summary(_loss, overall_step_count)
+
+                # Run Model Against Validation Data
                 if overall_step_count > 0 and overall_step_count % param['valid_freq'] == 0:
+                    # Calculate Average Validation Loss
                     overall_avg_valid_loss = evaluate(model, epoch, i, valid_data, valid_text_targets, vocab)
-                    print('Epoch %d Step %d ... overall avg valid loss= %.6f' % (epoch, i, overall_avg_valid_loss))
-                    sys.stdout.flush()
+
+                    # Add to Tensorboard
+                    tb_writer.add_summary(summary=sess.run(fetches=tb_validation_loss,
+                                                           feed_dict={tb_placeholder: overall_avg_valid_loss}),
+                                          global_step=overall_step_count)
+
+                    # Save if validation loss improves
                     if best_valid_loss > overall_avg_valid_loss:
                         saver.save(sess, model_file)
                         best_valid_loss = overall_avg_valid_loss
-                    else:
-                        continue
+
             overall_avg_train_loss = train_loss / float(len(train_data))
-            print('epoch ', epoch, ' of training is completed ... overall avg. train loss ', overall_avg_train_loss)
+
             if last_overall_avg_train_loss is not None and overall_avg_train_loss > last_overall_avg_train_loss:
                 diff = overall_avg_train_loss - last_overall_avg_train_loss
                 if diff > param['train_loss_incremenet_tolerance']:
@@ -317,6 +392,7 @@ def run_training(param):
                         'WARNING: training loss (%.6f) has increased by %.6f since last epoch, has exceed tolerance of %f ' % (
                             overall_avg_train_loss, diff, param['train_loss_incremenet_tolerance']))
                 else:
+
                     print(
                         'WARNING: training loss (%.6f) has increased by %.6f since last epoch, but still within tolerance of %f ' % (
                             overall_avg_train_loss, diff, param['train_loss_incremenet_tolerance']))
@@ -328,8 +404,10 @@ def run_training(param):
 
 
 def main():
-    data_dir = sys.argv[1]
-    param = get_params(data_dir, sys.argv[2])
+    data_dir = '/nas/Datasets/mmd/v2'
+    dump_dir = '/home/l.fischer/MMD_Code/Target_model'
+    image_annoy_dir = '/home/l.fischer/MMD_Code/image_annoy_index'
+    param = get_params(data_dir, dump_dir, image_annoy_dir)
 
     if os.path.exists(param['train_data_file']) and os.path.exists(param['valid_data_file']) and os.path.exists(
             param['test_data_file']):
@@ -337,6 +415,7 @@ def main():
         sys.stdout.flush()
     else:
         get_dialog_dict(param)
+
         print('dictionary formed')
         sys.stdout.flush()
     run_training(param)

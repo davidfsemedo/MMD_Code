@@ -1,7 +1,7 @@
 from tensorflow.contrib.rnn import GRUCell
 
 
-def get_params(data_dir, dir):
+def get_params(data_dir, dir, image_annoy_dir):
     param = {}
     dir = str(dir)
     param['train_dir_loc'] = data_dir + "/train/"
@@ -10,7 +10,7 @@ def get_params(data_dir, dir):
     param['dump_dir_loc'] = dir + "/dump/"
     param['test_output_dir'] = dir + "/test_output/"
     param['vocab_file'] = dir + "/vocab.pkl"
-    param['image_annoy_dir'] = '../image_annoy_index/'
+    param['image_annoy_dir'] = image_annoy_dir
     param['train_data_file'] = dir + "/dump/train_data_file.pkl"
     param['valid_data_file'] = dir + "/dump/valid_data_file.pkl"
     param['test_data_file'] = dir + "/dump/test_data_file.pkl"
@@ -41,4 +41,7 @@ def get_params(data_dir, dir):
     param['valid_freq'] = 10000
     param['max_gradient_norm'] = 0.1
     param['train_loss_incremenet_tolerance'] = 0.01
+
+    # New Parameters
+    param['tb_store_loss_freq'] = 1000
     return param

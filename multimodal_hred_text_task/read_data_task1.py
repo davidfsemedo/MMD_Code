@@ -1,26 +1,23 @@
-import sys
+import os
 import numpy as np
 import pickle as pkl
-from params import *
+from params_v2 import *
+from annoy import AnnoyIndex
 from prepare_data_for_hred import PrepareData
 
 start_symbol_index = 0
 end_symbol_index = 1
 unk_symbol_index = 2
 pad_symbol_index = 3
-import os
-from annoy import AnnoyIndex
 
-image_annoy_dir = "/home/l.fischer/MMD_Code/image_annoy_index"
-annoyIndex = AnnoyIndex(4096, metric='euclidean')
-annoyIndex.load(image_annoy_dir + '/annoy.ann')
-annoyPkl = pkl.load(open(image_annoy_dir + '/ImageUrlToIndex.pkl', "rb"))
+annoyIndex = None
 
 
 def load_image_representation(image_annoy_dir):
-    pass
-    # annoyIndex = AnnoyIndex(4096, metric='euclidean')
-    # annoyIndex.load(image_annoy_dir + '/annoy.ann')
+    annoyIndex = AnnoyIndex(4096, metric='euclidean')
+
+    image_annoy_dir = "/home/l.fischer/MMD_Code/image_annoy_index/annoy.ann"
+    annoyIndex.load(image_annoy_dir)
     # annoyPkl = pkl.load(open(image_annoy_dir + '/ImageUrlToIndex.pkl'))
 
 
@@ -47,10 +44,12 @@ def get_dialog_dict(param, is_test=False):
     if os.path.isfile(vocab_file):
         print('found existing vocab file in ' + str(vocab_file) + ', ... reading from there')
     if not is_test:
+        print(train_dir_loc)
+        print(vocab_file)
         preparedata.prepare_data(train_dir_loc, vocab_file, vocab_stats_file, os.path.join(dump_dir_loc, "train"),
-                                 train_data_file, True)
+                                 train_data_file, isTrain=True)
         preparedata.prepare_data(valid_dir_loc, vocab_file, vocab_stats_file, os.path.join(dump_dir_loc, "valid"),
-                                 valid_data_file, True)
+                                 valid_data_file, isTrain=True)
     if test_state is not None:
         preparedata.prepare_data(test_dir_loc, vocab_file, vocab_stats_file,
                                  os.path.join(dump_dir_loc + "/test_data_file_state/", "test_" + test_state),
@@ -228,7 +227,10 @@ def load_valid_test_target(data_dict):
 
 
 if __name__ == "__main__":
-    param = get_params(sys.argv[1])
+    data_dir = '/nas/Datasets/mmd/v1'
+    dump_dir = '/home/l.fischer/MMD_Code/Target_model'
+
+    param = get_params(data_dir=data_dir, dir=dump_dir)
     train_dir_loc = param['train_dir_loc']
     valid_dir_loc = param['valid_dir_loc']
     test_dir_loc = param['test_dir_loc'].replace('test', 'test_smallest')
@@ -249,4 +251,4 @@ if __name__ == "__main__":
     if os.path.isfile(vocab_file):
         print('found existing vocab file in ' + str(vocab_file) + ', ... reading from there')
     preparedata.prepare_data(test_dir_loc, vocab_file, vocab_stats_file, os.path.join(dump_dir_loc, "test_smallest"),
-                             test_data_file)
+                             test_data_file, isTrain=True)

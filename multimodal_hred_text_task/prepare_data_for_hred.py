@@ -1,15 +1,11 @@
 import os
 import json
 import copy
-import pickle as pkl
-import argparse
 import logging
 import nltk
-# nltk.download()
-from nltk import word_tokenize
-import numpy as np
-
 import collections
+import numpy as np
+import pickle as pkl
 from collections import Counter
 
 
@@ -46,33 +42,44 @@ class PrepareData():
         with open(filename, 'wb') as f:
             pkl.dump(obj, f, protocol=0)
 
-    def prepare_data(self, input, vocab_file, vocab_stats_file, output, dialogue_pkl_file, isTrain, isTest=False, test_state=None):
-        if not os.path.isdir(input) or len(os.listdir(input)) == 0:
+    def prepare_data(self, input, vocab_file, vocab_stats_file, output, dialogue_pkl_file, isTrain, isTest=False,
+                     test_state=None):
 
+        if not os.path.isdir(input) or len(os.listdir(input)) == 0:
             raise Exception("Input file not found")
+
         if not self.task_type == "text" and not self.task_type == "image":
             raise Exception("task_type has to be either text or image, found " + self.task_type)
+
         self.vocab_file = vocab_file
         self.vocab_stats_file = vocab_stats_file
         self.output = output
+
         if self.task_type == "text":
             self.dialogue_context_text_task_text_file = self.output + "_context_text_task_text.txt"
             self.dialogue_context_image_task_text_file = self.output + "_context_image_task_text.txt"
             self.dialogue_target_text_task_text_file = self.output + "_target_text_task_text.txt"
+
         if self.task_type == "image":
             self.dialogue_context_text_task_image_file = self.output + "_context_text_task_image.txt"
             self.dialogue_context_image_task_image_file = self.output + "_context_image_task_image.txt"
             self.dialogue_target_text_task_image_file = self.output + "_target_text_task_image.txt"
+
         if os.path.isfile(vocab_file):
             print('found pre-existing vocab file ... reusing it')
             create_vocab = False
+
         else:
             create_vocab = True
+
         self.read_jsondir(input, isTest, test_state, create_vocab)
+
         if create_vocab:
             self.build_vocab()
+
         else:
             self.read_vocab()
+
         if create_vocab or not os.path.exists(dialogue_pkl_file):
             self.binarize_corpus(dialogue_pkl_file)
 
@@ -108,7 +115,7 @@ class PrepareData():
                 self.read_jsonfile(os.path.join(json_dir, file), create_vocab, is_test, test_state)
 
             if file_num % 1000 == 0:
-                print('Reading JSON Files {}%'.format(np.round(file_num/num_files,5)))
+                print('Reading JSON Files {}%'.format(np.round(file_num / num_files, 5)))
 
     def pad_or_clip_dialogue(self, dialogue_instance):
         dialogue_instance = self.rollout_dialogue(dialogue_instance)
@@ -196,7 +203,7 @@ class PrepareData():
                 nlg = utterance['utterance']['nlg']
 
                 if nlg is not None:
-                     nlg = nlg.strip()#.encode('utf-8')
+                    nlg = nlg.strip()  # .encode('utf-8')
                 if nlg is None:
                     nlg = ""
 
@@ -278,12 +285,12 @@ class PrepareData():
                         if image_context is None:
                             try:
                                 image_context = ",".join(images)
-                            except TypeError: # If images = [None]
+                            except TypeError:  # If images = [None]
                                 image_context = ",".join([])
                         else:
                             try:
                                 image_context = image_context + "|" + ",".join(images)
-                            except TypeError: # If images = [None]
+                            except TypeError:  # If images = [None]
                                 image_context = image_context + "|" + ",".join([])
                     if len(image_context.split("|")) != self.max_utter:
                         raise Exception('len(dialogue_instance_image_context)!=self.max_utter')
@@ -451,8 +458,9 @@ class PrepareData():
         # binarized_corpus = [binarized_corpus_text_context,  binarized_corpus_image_context, binarized_corpus_target]
         self.safe_pickle(binarized_corpus, dialogue_pkl_file)
         if not os.path.isfile(self.vocab_file):
-
-            self.safe_pickle([(word, word_id, freqs[word_id], df[word_id]) for word, word_id in self.vocab_dict.items()],self.vocab_stats_file)
+            self.safe_pickle(
+                [(word, word_id, freqs[word_id], df[word_id]) for word, word_id in self.vocab_dict.items()],
+                self.vocab_stats_file)
             inverted_vocab_dict = {word_id: word for word, word_id in self.vocab_dict.items()}
             self.safe_pickle(inverted_vocab_dict, self.vocab_file)
 
@@ -461,4 +469,4 @@ class PrepareData():
         self.logger.info("Number of terms %d" % num_terms)
         self.logger.info("Mean document length %f" % float(sum(map(len, binarized_corpus)) / len(binarized_corpus)))
         self.logger.info("Writing training %d dialogues (%d left out)" % (
-        len(binarized_corpus), num_instances + 1 - len(binarized_corpus)))
+            len(binarized_corpus), num_instances + 1 - len(binarized_corpus)))
