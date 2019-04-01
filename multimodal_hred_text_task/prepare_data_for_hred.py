@@ -178,10 +178,12 @@ class PrepareData():
             dialogue_context_text_task_text = []
             dialogue_context_image_task_text = []
             dialogue_target_text_task_text = []
+
         if self.task_type == "image":
             dialogue_context_text_task_image = []
             dialogue_context_image_task_image = []
             dialogue_target_image_task_image = []
+
         dialogue_instance_multimodal = []
         for utterances in dialogue:
 
@@ -189,6 +191,7 @@ class PrepareData():
                 continue
             if not isinstance(utterances, list):
                 utterances = [utterances]
+
             for utterance in utterances:
                 if utterance is None:
                     continue

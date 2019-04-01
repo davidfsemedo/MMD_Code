@@ -2,16 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d6fa9537-6f1e-44e0-b5aa-b1f7dcad3e57" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/multimodal_hred_text_task/helper_functions.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/multimodal_hred_text_task/model_testing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/hierarchy_model_text.py" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/hierarchy_model_text.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/params_test_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/params_test_v2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/params_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/params_v2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/prepare_data_for_hred.py" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/prepare_data_for_hred.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/read_data_task1.py" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/read_data_task1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/run.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/run_model_task1.py" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/run_model_task1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multimodal_hred_text_task/run_test_task1.py" beforeDir="false" afterPath="$PROJECT_DIR$/multimodal_hred_text_task/run_test_task1.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -21,11 +15,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/run_model_task1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="545">
-              <caret line="354" column="55" selection-start-line="354" selection-start-column="37" selection-end-line="354" selection-end-column="55" />
+            <state relative-caret-position="-1558">
+              <caret line="14" column="23" lean-forward="true" selection-start-line="14" selection-start-column="23" selection-end-line="14" selection-end-column="23" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -36,8 +30,20 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/read_data_task1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="209">
-              <caret line="16" column="25" selection-start-line="16" selection-start-column="25" selection-end-line="16" selection-end-column="25" />
+            <state relative-caret-position="19">
+              <caret line="96" column="31" selection-start-line="96" selection-start-column="31" selection-end-line="96" selection-end-column="31" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/model_testing.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="342">
+              <caret line="138" column="31" lean-forward="true" selection-start-line="138" selection-start-column="31" selection-end-line="138" selection-end-column="31" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -48,8 +54,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/params_v2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="741">
-              <caret line="39" column="34" selection-start-line="39" selection-start-column="34" selection-end-line="39" selection-end-column="34" />
+            <state relative-caret-position="342">
+              <caret line="18" column="17" selection-start-line="18" selection-start-column="11" selection-end-line="18" selection-end-column="17" />
             </state>
           </provider>
         </entry>
@@ -57,8 +63,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/prepare_data_for_hred.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8816">
-              <caret line="472" selection-start-line="472" selection-end-line="472" />
+            <state relative-caret-position="3686">
+              <caret line="202" column="19" selection-start-line="202" selection-start-column="19" selection-end-line="202" selection-end-column="19" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -77,25 +83,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>reading json</find>
-      <find>read_jsondir(</find>
-      <find>get_dialog</find>
-      <find>reading</find>
-      <find>media</find>
-      <find>load_pkl</find>
-      <find>get_sum_batch_loss</find>
-      <find>get_test_op</find>
-      <find>perform_test</find>
-      <find>perform_test(</find>
-      <find>read_data</find>
-      <find>get_predicted_sentence</find>
-      <find>load_valid_test_target</find>
-      <find>args[</find>
-      <find>params_v</find>
-      <find>/home/l.fischer/MMD_Code/Target_model</find>
-      <find>instance</find>
-      <find>self.output</find>
-      <find>test_data_file_state</find>
       <find>self.dialogue_context_text_task_text_file</find>
       <find>read_jsondir</find>
       <find>reus</find>
@@ -106,7 +93,26 @@
       <find>early</find>
       <find>early_stop</find>
       <find>get_predicted_s</find>
+      <find>Train Dialog</find>
+      <find>Epoch</find>
+      <find>print(</find>
+      <find>print(&quot;Train</find>
+      <find>Training</find>
+      <find>import tens</find>
+      <find>sess.run</find>
+      <find>tf.Sess</find>
+      <find>evaluate</find>
+      <find>model_</find>
+      <find>logging</find>
+      <find>log</find>
+      <find>train</find>
+      <find>evalu</find>
+      <find>get_predicted</find>
+      <find>&quot;nlg&quot;</find>
       <find>train_data_file</find>
+      <find>get_predicted_sentence</find>
+      <find>model_file</find>
+      <find>get_batch_data</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -124,11 +130,12 @@
         <option value="$PROJECT_DIR$/multimodal_hred_text_task/helper_functions.py" />
         <option value="$PROJECT_DIR$/multimodal_hred_text_task/hierarchy_model_text.py" />
         <option value="$PROJECT_DIR$/multimodal_hred_text_task/run.sh" />
-        <option value="$PROJECT_DIR$/multimodal_hred_text_task/read_data_task1.py" />
         <option value="$PROJECT_DIR$/multimodal_hred_text_task/params_v2.py" />
         <option value="$PROJECT_DIR$/multimodal_hred_text_task/params_test_v2.py" />
         <option value="$PROJECT_DIR$/multimodal_hred_text_task/run_test_task1.py" />
+        <option value="$PROJECT_DIR$/multimodal_hred_text_task/read_data_task1.py" />
         <option value="$PROJECT_DIR$/multimodal_hred_text_task/run_model_task1.py" />
+        <option value="$PROJECT_DIR$/multimodal_hred_text_task/model_testing.py" />
       </list>
     </option>
   </component>
@@ -163,6 +170,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
   <component name="RunDashboard">
@@ -188,6 +196,14 @@
       <option name="presentableId" value="Default" />
       <updated>1553250201854</updated>
     </task>
+    <task id="LOCAL-00001" summary="Able to train">
+      <created>1553618176934</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1553618176934</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -235,6 +251,10 @@
       <window_info anchor="right" id="R Graphics" order="3" />
       <window_info anchor="right" id="R Packages" order="4" weight="0.3296875" />
     </layout-to-restore>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Able to train" />
+    <option name="LAST_COMMIT_MESSAGE" value="Able to train" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file:///usr/local/lib/python3.6/dist-packages/tensorflow/python/ops/rnn.py">
@@ -296,16 +316,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/hierarchy_model_text.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3590">
-          <caret line="512" lean-forward="true" selection-start-line="512" selection-end-line="512" />
-          <folding>
-            <element signature="e#1#19#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/helper_functions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1881">
@@ -344,10 +354,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/run_model_task1.py">
+    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/hierarchy_model_text.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="545">
-          <caret line="354" column="55" selection-start-line="354" selection-start-column="37" selection-end-line="354" selection-end-column="55" />
+        <state relative-caret-position="9063">
+          <caret line="490" column="30" selection-start-line="490" selection-start-column="30" selection-end-line="490" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/params_v2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="342">
+          <caret line="18" column="17" selection-start-line="18" selection-start-column="11" selection-end-line="18" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/prepare_data_for_hred.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3686">
+          <caret line="202" column="19" selection-start-line="202" selection-start-column="19" selection-end-line="202" selection-end-column="19" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
@@ -356,25 +380,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/read_data_task1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="209">
-          <caret line="16" column="25" selection-start-line="16" selection-start-column="25" selection-end-line="16" selection-end-column="25" />
+        <state relative-caret-position="19">
+          <caret line="96" column="31" selection-start-line="96" selection-start-column="31" selection-end-line="96" selection-end-column="31" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/params_v2.py">
+    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/run_model_task1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="741">
-          <caret line="39" column="34" selection-start-line="39" selection-start-column="34" selection-end-line="39" selection-end-column="34" />
+        <state relative-caret-position="-1558">
+          <caret line="14" column="23" lean-forward="true" selection-start-line="14" selection-start-column="23" selection-end-line="14" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/prepare_data_for_hred.py">
+    <entry file="file://$PROJECT_DIR$/multimodal_hred_text_task/model_testing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8816">
-          <caret line="472" selection-start-line="472" selection-end-line="472" />
+        <state relative-caret-position="342">
+          <caret line="138" column="31" lean-forward="true" selection-start-line="138" selection-start-column="31" selection-end-line="138" selection-end-column="31" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

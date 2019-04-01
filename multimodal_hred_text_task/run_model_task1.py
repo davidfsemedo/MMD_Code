@@ -1,11 +1,6 @@
 import os
 import sys
-import math
 import random
-import logging
-
-import numpy as np
-import pickle as pkl
 
 sys.path.append(os.getcwd())
 import os.path
@@ -13,7 +8,13 @@ from params_v2 import *
 from read_data_task1 import *
 from hierarchy_model_text import *
 import tensorflow as tf
+
 import read_data_task1
+
+
+# config = tf.ConfigProto()
+# config.gpu_options.allow_growth = True
+# session = tf.Session(config=config)
 
 
 def feeding_dict(model, inputs_text, inputs_image, target_text, decoder_text_inputs, text_weights, feed_prev):
@@ -161,8 +162,9 @@ def run_training(param):
         print('Validation Started')
 
         # Set validation log filename
-        logging.basicConfig(filename='./Target_Model/log/Val_Results_Epoch_{}_Step_{}.log'.format(epoch, step),
-                            level=logging.INFO)
+        # logging.basicConfig(
+        #     filename='/home/l.fischer/MMD_Code/Target_Model/log/Val_Results_Epoch_{}_Step_{}.log'.format(epoch, step),
+        #     level=logging.INFO)
 
         valid_loss = 0
         batch_predicted_sentence = []
@@ -180,9 +182,9 @@ def run_training(param):
             valid_loss = valid_loss + sum_batch_loss
 
         # Remove the log handlers
-        log = logging.getLogger()
-        for hdlr in log.handlers[:]:
-            log.removeHandler(hdlr)
+        # log = logging.getLogger()
+        # for hdlr in log.handlers[:]:
+        #     log.removeHandler(hdlr)
 
         return float(valid_loss) / float(len(valid_data))
 
@@ -212,15 +214,20 @@ def run_training(param):
             print("loss for the pair of true and predicted sentences", str(batch_valid_loss[i]))
             print("\n")
 
-    def record_val_results(pred_op, true_op, step, epoch, batch_valid_loss):
+    def get_prediction(sess, model_file, vocab):
+        sentence_to_predict = "Hi there"
+        print('reading model from  modelfile')
+        saver.restore(sess, model_file)
 
+    def record_val_results(pred_op, true_op, step, epoch, batch_valid_loss):
+        pass
         # Add true and predicted validation sentences to log file
-        for i in range(0, len(true_op), 100):
-            logging.info('Step {}, Epoch {}'.format(step, epoch))
-            logging.info('True: {}'.format(true_op[i]))
-            logging.info('Pred: {}'.format(pred_op[i]))
-            logging.info('Pair Loss = {}'.format(batch_valid_loss[i]))
-            logging.info('----------------------------------------------------------')
+        # for i in range(0, len(true_op), 100):
+        #     logging.info('Step {}, Epoch {}'.format(step, epoch))
+        #     logging.info('True: {}'.format(true_op[i]))
+        #     logging.info('Pred: {}'.format(pred_op[i]))
+        #     logging.info('Pair Loss = {}'.format(batch_valid_loss[i]))
+        #     logging.info('----------------------------------------------------------')
 
     def map_id_to_word(word_indices, vocab):
         sentence_list = []
@@ -339,6 +346,8 @@ def run_training(param):
             print(var.name, var.get_shape())
 
         print('Training Started')
+        train_batch_dict_v1 = train_data[0]
+        print("INCOMING")
         sys.stdout.flush()
         last_overall_avg_train_loss = None
         overall_step_count = 0
