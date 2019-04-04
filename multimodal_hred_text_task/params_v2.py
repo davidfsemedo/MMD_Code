@@ -26,7 +26,7 @@ def get_params(data_dir, dir, image_annoy_dir):
     param['output_activation'] = None  # tf.nn.softmax
     param['cell_size'] = 512
     param['cell_type'] = GRUCell
-    param['batch_size'] = 1
+    param['batch_size'] = 64
     param['vocab_freq_cutoff'] = 2
     param['learning_rate'] = 0.0004
     param['patience'] = 200
