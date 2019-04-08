@@ -112,6 +112,9 @@ def run_training(param):
         return get_sum_batch_loss(batch_valid_loss)
 
     def evaluate(model, epoch, valid_data):
+        """
+        Performs the training procedure in the validation set every 10000 training steps
+        """
         print('Validation Started')
         valid_loss = 0
         n_batches = int(math.ceil(float(len(valid_data)) / float(param['batch_size'])))
