@@ -2,6 +2,14 @@ from tensorflow.contrib.rnn import GRUCell
 
 
 def get_params(data_dir, dir, image_annoy_dir):
+    """
+    Creates a dictionary containing all the system parameters to be used in the v2 dataset
+    :param data_dir: The path to the data folder (/nas/Datasets/mmd/v2)
+    :param dir: The path to output folder (/home/l.fischer/MMD_Code/Target_model)
+    :param image_annoy_dir: The path to image_annoy (/home/l.fischer/MMD_Code/image_annoy_index) not being used
+    :return: The dictionary object containing all the system parameters
+    """
+
     param = {}
     dir = str(dir)
     param['train_dir_loc'] = data_dir + "/train/"
