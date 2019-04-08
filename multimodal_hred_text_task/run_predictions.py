@@ -1,10 +1,4 @@
-import os
 import nltk
-import collections
-import pickle as pkl
-import numpy as np
-import tensorflow as tf
-from params_v2 import *
 from read_data_task1 import *
 from hierarchy_model_text import *
 
