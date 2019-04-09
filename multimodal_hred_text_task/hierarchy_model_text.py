@@ -15,7 +15,6 @@ from helper_functions import get_decoder_embedding, linear
 
 sys.path.append(os.getcwd())
 
-
 class Hierarchical_seq_model_text():
     def __init__(self, task_type, text_embedding_size, image_embedding_size, image_rep_size, cell_size, cell_type,
                  batch_size, learning_rate, max_len, max_utter, max_images, patience, decoder_words, max_gradient_norm,
@@ -186,11 +185,6 @@ class Hierarchical_seq_model_text():
         # enc_utter_states is of dimension (cell_size, batch_size)
         enc_utter_states = self.utterance_encoder(enc_concat_text_img_states)
 
-        return enc_utter_states
-
-    def text_hierarchical_encoder(self):
-        enc_text_states = self.sentence_encoder(self.encoder_text_inputs)
-        enc_utter_states = self.utterance_encoder(enc_text_states)
         return enc_utter_states
 
     def image_encoder(self, enc_img_inputs):
@@ -438,17 +432,6 @@ class Hierarchical_seq_model_text():
     def inference(self):
         if self.task_type == "text":
             utterance_output, attention_states = self.hierarchical_encoder()
-            logits = self.hierarchical_decoder(utterance_output, attention_states)
-            return logits
-
-        elif self.task_type == "image":
-            utterance_output = self.hierarchical_encoder()
-            projected_utterance_output = self.project_utter_encoding(utterance_output)
-            return projected_utterance_output
-
-    def custom_inference(self):
-        if self.task_type == "text":
-            utterance_output, attention_states = self.text_hierarchical_encoder()
             logits = self.hierarchical_decoder(utterance_output, attention_states)
             return logits
 
