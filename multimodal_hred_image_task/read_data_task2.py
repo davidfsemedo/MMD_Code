@@ -14,9 +14,9 @@ annoyIndex = None
 
 
 def load_image_representation(image_annoy_dir):
-    annoyInde = AnnoyIndex(4096, metric='euclidean')
+    annoyIndex = AnnoyIndex(4096, metric='euclidean')
     annoyIndex.load(image_annoy_dir + '/annoy.ann')
-    annoyPkl = pkl.load(open(image_annoy_dir + '/ImageUrlToIndex.pkl'))
+    # annoyPkl = pkl.load(open(image_annoy_dir + '/ImageUrlToIndex.pkl', "rb"))
 
 
 def get_dialog_dict(param, is_test=False):
@@ -41,8 +41,7 @@ def get_dialog_dict(param, is_test=False):
     preparedata = PrepareData(max_utter, max_len, max_images, max_negs, start_symbol_index, end_symbol_index,
                               unk_symbol_index, pad_symbol_index, "image", cutoff=vocab_freq_cutoff)
     if os.path.isfile(vocab_file):
-        print
-        'found existing vocab file in ' + str(vocab_file) + ', ... reading from there'
+        print('found existing vocab file in ' + str(vocab_file) + ', ... reading from there')
     if not is_test:
         preparedata.prepare_data(train_dir_loc, vocab_file, vocab_stats_file, os.path.join(dump_dir_loc, "train"),
                                  train_data_file, True, False, None)

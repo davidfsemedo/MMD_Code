@@ -1,6 +1,4 @@
-import tensorflow as tf
-from tensorflow.python.ops import rnn, rnn_cell
-import os
+from tensorflow.contrib.rnn import GRUCell
 
 
 def get_params(data_dir, dir, image_annoy_dir):
@@ -27,7 +25,7 @@ def get_params(data_dir, dir, image_annoy_dir):
     param['activation'] = None  # tf.tanh
     param['output_activation'] = None  # tf.nn.softmax
     param['cell_size'] = 512
-    param['cell_type'] = rnn_cell.GRUCell
+    param['cell_type'] = GRUCell
     param['batch_size'] = 64
     param['vocab_freq_cutoff'] = 2
     param['learning_rate'] = 0.0004

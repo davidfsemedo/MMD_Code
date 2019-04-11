@@ -57,6 +57,7 @@ def run_training(param):
         train_batch_text, train_batch_image, batch_image_target_pos, batch_image_target_negs, batch_mask_negs = get_batch_data(
             param['max_len'], param['max_images'], param['image_rep_size'], param['max_utter'], param['max_negs'],
             param['batch_size'], batch_dict)
+
         feed_dict = feeding_dict(model, train_batch_text, train_batch_image, batch_image_target_pos,
                                  batch_image_target_negs, batch_mask_negs)
         batch_mm_loss, batch_cosine_sim_pos, batch_cosine_sim_negs, _ = sess.run(
@@ -113,11 +114,11 @@ def run_training(param):
 
         return avg_valid_loss, avg_mm_loss, avg_cosine_sim_pos, avg_cosine_sim_neg
 
-    train_data = pkl.load(open(param['train_data_file']))
+    train_data = pkl.load(open(param['train_data_file'], "rb"))
     print('Train dialogue dataset loaded')
     sys.stdout.flush()
 
-    valid_data = pkl.load(open(param['valid_data_file']))
+    valid_data = pkl.load(open(param['valid_data_file'], "rb"))
     print('Valid dialogue dataset loaded')
     sys.stdout.flush()
 
@@ -258,7 +259,6 @@ def main():
     image_annoy_dir = '/home/l.fischer/MMD_Code/image_annoy_index'
     param = get_params(data_dir, dump_dir, image_annoy_dir)
 
-    print(param)
     if os.path.exists(param['train_data_file']) and os.path.exists(param['valid_data_file']) and os.path.exists(
             param['test_data_file']):
         print('dictionary already exists')
