@@ -9,10 +9,11 @@ import os.path
 from read_data_task1 import *
 from hierarchy_model_text import *
 import tensorflow as tf
-import read_data_task1
 
 
 def feeding_dict(model, inputs_text, inputs_image, target_text, decoder_text_inputs, text_weights, feed_prev):
+    """Create the feed dictionary to be fed to the model in the training and validation phases"""
+
     feed_dict = {}
     for encoder_text_input, input_text in zip(model.encoder_text_inputs, inputs_text):
         for encoder_text_input_i, input_text_i in zip(encoder_text_input, input_text):
@@ -36,9 +37,10 @@ def feeding_dict(model, inputs_text, inputs_image, target_text, decoder_text_inp
 
 
 def check_dir(param):
-    '''Checks whether model and logs directtory exists, if not then creates both directories for saving best model and logs.
-    Args:
-        param:parameter dictionary.'''
+    """
+    Checks whether model and logs directory exists, if not then creates both directories for saving best model and logs
+    """
+
     if not os.path.exists(param['logs_path']):
         os.makedirs(param['logs_path'])
 
@@ -62,9 +64,12 @@ def run_training(param):
         :return: The output of the loss and logits operations for the training set
         """
 
+        # Retrieve the necessary variables from the batch data to construct the feed dictionary
         train_batch_text, train_batch_image, batch_text_target, batch_decoder_input, batch_text_weight = get_batch_data(
             param['max_len'], param['max_images'], param['image_rep_size'], param['max_utter'], param['batch_size'],
             batch_dict)
+
+        # Constructing the feed dictionary to be fed to the model
         if epoch < 0:
             feed_dict = feeding_dict(model, train_batch_text, train_batch_image, batch_text_target, batch_decoder_input,
                                      batch_text_weight, False)
@@ -72,6 +77,7 @@ def run_training(param):
             feed_dict = feeding_dict(model, train_batch_text, train_batch_image, batch_text_target, batch_decoder_input,
                                      batch_text_weight, True)
 
+        # Running the actual training process (train_op) and obtaining the losses (losses) and the embeddings (logits)
         loss, dec_op, _ = sess.run([losses, logits, train_op], feed_dict=feed_dict)
         return loss, dec_op
 
@@ -84,11 +90,16 @@ def run_training(param):
         :return: The output of the loss and logits operations for the validation set
         """
 
+        # Retrieve the necessary variables from the batch data to construct the feed dictionary
         valid_batch_text, valid_batch_image, batch_text_target, batch_decoder_input, batch_text_weight = get_batch_data(
             param['max_len'], param['max_images'], param['image_rep_size'], param['max_utter'], param['batch_size'],
             batch_dict)
+
+        # Constructing the feed dictionary to be fed to the model
         feed_dict = feeding_dict(model, valid_batch_text, valid_batch_image, batch_text_target, batch_decoder_input,
                                  batch_text_weight, True)
+
+        # Running the validation operation to obtain the losses and the embeddings obtained
         loss, dec_op = sess.run([losses, logits], feed_dict)
         return loss, dec_op
 
@@ -101,20 +112,22 @@ def run_training(param):
         Calls get_train_loss where the training operation actually happens, also
         sums up the entire loss values for that batch
         """
-
+        # Running the actual training process
         batch_train_loss, dec_op = get_train_loss(model, batch_dict)
-        sum_batch_loss = get_sum_batch_loss(batch_train_loss)
-        return sum_batch_loss
+
+        # Sum up all the losses obtained in this batch
+        return get_sum_batch_loss(batch_train_loss)
 
     def perform_evaluation(model, batch_dict):
         """
         Calls get_valid_loss where the validation set operations actually happens,
         also sums up the entire loss values for the given batch
         """
-
+        # Running the actual validation process
         batch_valid_loss, valid_op = get_valid_loss(model, batch_dict)
-        sum_batch_loss = get_sum_batch_loss(batch_valid_loss)
-        return sum_batch_loss
+
+        # Sum up all the losses obtained in this batch
+        return get_sum_batch_loss(batch_valid_loss)
 
     def evaluate(model, epoch, valid_data):
         """
@@ -123,19 +136,22 @@ def run_training(param):
 
         print('Validation Started')
 
-        # Set validation log filename
-        # logging.basicConfig(filename='./Target_Model/log/Val_Results_Epoch_{}_Step_{}.log'.format(epoch, step),
-        #                     level=logging.INFO)
-
         valid_loss = 0
         n_batches = int(math.ceil(float(len(valid_data)) / float(param['batch_size'])))
 
         for i in range(n_batches):
+
+            # Print at every 10 batches
             if i % 10 == 0:
                 print('Validating: Epoch {}, Batch {}'.format(epoch, i))
 
+            # Obtain a batch from the validation data
             batch_dict = valid_data[i * param['batch_size']:(i + 1) * param['batch_size']]
+
+            # Perform the validation process and sum up the losses for this batch
             sum_batch_loss = perform_evaluation(model, batch_dict)
+
+            # Sum the losses from this batch with all the other batches so far
             valid_loss = valid_loss + sum_batch_loss
 
         # Remove the log handlers
@@ -151,15 +167,18 @@ def run_training(param):
             file = pkl.load(f)
         return file
 
+    # Loading the Training data
     train_data = load_pkl(param['train_data_file'])
     print(param['image_annoy_dir'])
     print('Train dialogue dataset loaded')
     sys.stdout.flush()
 
+    # Loading the Validation data
     valid_data = load_pkl(param['valid_data_file'])
     print('Valid dialogue dataset loaded')
     sys.stdout.flush()
 
+    # Loading the Vocabulary of the dataset
     vocab = load_pkl(param['vocab_file'])
     vocab_size = len(vocab)
     param['decoder_words'] = vocab_size
@@ -175,15 +194,21 @@ def run_training(param):
     model_file = os.path.join(param['model_path'], "best_model")
 
     with tf.Graph().as_default():
+
+        # Instantiating the model with the required parameters
         model = Hierarchical_seq_model_text('text', param['text_embedding_size'], param['image_embedding_size'],
                                             param['image_rep_size'], param['cell_size'], param['cell_type'],
                                             param['batch_size'], param['learning_rate'], param['max_len'],
                                             param['max_utter'], param['max_images'], param['patience'],
                                             param['decoder_words'], param['max_gradient_norm'], param['activation'],
                                             param['output_activation'])
+
+        # Instantiate the placeholder variables the model expects to receive as input
         model.create_placeholder()
         logits = model.inference()
         losses = model.loss_task_text(logits)
+
+        # The actual training operation
         train_op, gradients = model.train(losses)
         print("model created")
         sys.stdout.flush()
@@ -194,6 +219,7 @@ def run_training(param):
 
         tb_placeholder = tf.placeholder(tf.float16, shape=None)
 
+        # Creating summary variables to write to tensorboard
         tb_training_loss = tf.summary.scalar('Training Loss', tb_placeholder)
         tb_validation_loss = tf.summary.scalar('Validation Loss', tb_placeholder)
 
@@ -214,18 +240,24 @@ def run_training(param):
         else:
             old_model_file = None
         if old_model_file is not None:
+            # Restoring to a previous best model if exists
             print("best model exists.. restoring from that point")
             saver.restore(sess, old_model_file)
         else:
+            # If there's no old model then start from the beginning by initializing the variables
             print("initializing fresh variables")
             sess.run(init)
+
         best_valid_loss = float("inf")
         best_valid_epoch = 0
+
+        # Printing TensorFlow variables
         all_var = tf.all_variables()
         print('printing all', len(all_var), ' TF variables:')
         for var in all_var:
             print(var.name, var.get_shape())
 
+        # Starting the training stage
         print('Training Started')
         sys.stdout.flush()
         last_overall_avg_train_loss = None
@@ -236,15 +268,21 @@ def run_training(param):
             train_loss = 0
             for i in range(n_batches):
 
-                # Print Update
+                # Print an update every 10 batches
                 if i % 10 == 0:
                     print('Training: Epoch {}, Batch {}'.format(epoch, i))
 
                 overall_step_count = overall_step_count + 1
+
+                # Obtain a batch data from the training set
                 train_batch_dict = train_data[i * param['batch_size']:(i + 1) * param['batch_size']]
+
+                # Perform the actual training process
                 sum_batch_loss = perform_training(model, train_batch_dict)
+
                 avg_batch_loss = sum_batch_loss / float(param['batch_size'])
 
+                # Sum up the entire loss values for every batch
                 train_loss = train_loss + sum_batch_loss
 
                 # Store average training loss in tensorboard
@@ -256,8 +294,10 @@ def run_training(param):
                     tb_writer.add_summary(_loss, overall_step_count)
 
                 # Run Model Against Validation Data
+                # The process is ran against the validation data every 10000 steps
                 if overall_step_count > 0 and overall_step_count % param['valid_freq'] == 0:
-                    # Calculate Average Validation Loss
+
+                    # Perform the evaluation process
                     overall_avg_valid_loss = evaluate(model, epoch, valid_data)
 
                     # Add to Tensorboard
@@ -265,7 +305,7 @@ def run_training(param):
                                                            feed_dict={tb_placeholder: overall_avg_valid_loss}),
                                           global_step=overall_step_count)
 
-                    # Save if validation loss improves
+                    # Save the model if validation loss improves
                     if best_valid_loss > overall_avg_valid_loss:
                         saver.save(sess, model_file)
                         best_valid_loss = overall_avg_valid_loss
