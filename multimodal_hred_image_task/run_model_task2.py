@@ -343,9 +343,15 @@ def run_training(param):
 
 
 def main():
+    # The path to the location of the dataset
     data_dir = '/nas/Datasets/mmd/v2'
+
+    # The path to Target_model folder
     dump_dir = '/home/l.fischer/MMD_Code/Target_model'
+
     image_annoy_dir = '/home/l.fischer/MMD_Code/image_annoy_index'
+
+    # Obtain the system parameters present in params_v2.py
     param = get_params(data_dir, dump_dir, image_annoy_dir)
 
     if os.path.exists(param['train_data_file']) and os.path.exists(param['valid_data_file']) and os.path.exists(

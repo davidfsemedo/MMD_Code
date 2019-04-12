@@ -15,6 +15,7 @@ from helper_functions import get_decoder_embedding, linear
 
 sys.path.append(os.getcwd())
 
+
 class Hierarchical_seq_model_text():
     def __init__(self, task_type, text_embedding_size, image_embedding_size, image_rep_size, cell_size, cell_type,
                  batch_size, learning_rate, max_len, max_utter, max_images, patience, decoder_words, max_gradient_norm,
@@ -441,17 +442,13 @@ class Hierarchical_seq_model_text():
             return projected_utterance_output
 
     def loss_task_text(self, logits):
-
-        # for logit in logits:
-        #	self.tf_print(logit)
-        # print 'len of text weights ', self.text_weights
-        # for txt in self.target_text:
-        #	self.tf_print(txt)
         # logits is a max_len sized list of 2-D tensors of dimension batch_size * decoder_words
         # self.target_text is a max_len sized list of 1-D tensors of dimension batch_size
         # self.text_weights is a max_len sized list of 1-D tensors of dimension batch_size
+
         losses = tf.contrib.legacy_seq2seq.sequence_loss_by_example(logits, self.target_text, self.text_weights)
         # losses is a 1-D tensor of dimension batch_size
+
         return losses
 
     def loss_task_image(self, projected_utterance_output):
@@ -500,9 +497,7 @@ class Hierarchical_seq_model_text():
         parameters = tf.trainable_variables()
         optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08)
         gradients = tf.gradients(losses, parameters)
-        # print tf.get_default_graph().as_graph_def()
         clipped_gradients, norm = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         global_step = tf.Variable(0, name="global_step", trainable='False')
-        # train_op=optimizer.minimize(losses,global_step=global_step)
         train_op = optimizer.apply_gradients(zip(clipped_gradients, parameters), global_step=global_step)
         return train_op, clipped_gradients

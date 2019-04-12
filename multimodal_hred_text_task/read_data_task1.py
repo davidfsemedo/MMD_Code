@@ -70,7 +70,6 @@ def get_weights(padded_target, batch_size, max_len, actual_seq_len):
 
 def get_utter_seq_len(dialogue_text_dict, dialogue_image_dict, dialogue_target, max_len, max_images, image_rep_size,
                       max_utter, batch_size):
-
     padded_utters_id = np.asarray([[xij for xij in dialogue_i] for dialogue_i in dialogue_text_dict])
     padded_image_rep = np.asarray([[xij for xij in dialogue_i] for dialogue_i in dialogue_image_dict])
     padded_target = np.asarray([xi for xi in dialogue_target])
@@ -91,8 +90,10 @@ def get_utter_seq_len(dialogue_text_dict, dialogue_image_dict, dialogue_target, 
 def get_batch_data(max_len, max_images, image_rep_size, max_utter, batch_size, data_dict):
     # get batch_text_dict, batch_image_dict, batch_target_dict from data_dict
     # data_dict is a batch_size sized list of zips(batch_text_dict, batch_image_dict, batch_target)
+
     data_dict = np.asarray(data_dict)
     # converting data dict from a multidimensional list to a numpy matrix in order to carry out the operations below
+
     batch_text_dict = data_dict[:, 0]
     # batch_text_dict is a multidimensional list integers (word ids) of dimension batch_size * max_utter * max_len
 
@@ -101,6 +102,7 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, batch_size, d
 
     batch_target = data_dict[:, 2]
     # batch_target is a list of list of words ids of dimension batch_size * max_len
+
     if len(data_dict) % batch_size != 0:
         batch_text_dict, batch_image_dict, batch_target = check_padding(batch_text_dict, batch_image_dict, batch_target,
                                                                         max_len, max_images, max_utter, batch_size)
@@ -108,10 +110,12 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, batch_size, d
     batch_image_dict = [
         [[get_image_representation(entry_ijk, image_rep_size) for entry_ijk in data_dict_ij] for data_dict_ij in
          data_dict_i] for data_dict_i in batch_image_dict]
+
     # batch_image_dict is now transformed to a multidimensional list of image_representations of dimension batch_size * max_utter * max_images * image_rep_size
 
     padded_utters, padded_image_rep, padded_target, padded_decoder_input, decoder_seq_len = get_utter_seq_len(
         batch_text_dict, batch_image_dict, batch_target, max_len, max_images, image_rep_size, max_utter, batch_size)
+
     # padded_utters is of dim (batch_size, max_utter,  max_len)
     # padded_image_rep is of dim (batch_size, max_utter, max_images, image_rep_size)
     # padded_target is of dim (batch_size, max_len)
@@ -122,15 +126,13 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, batch_size, d
 
     padded_utters, padded_image_rep, padded_target, padded_decoder_input, padded_weights = transpose_utterances(
         padded_utters, padded_image_rep, padded_target, padded_decoder_input, padded_weights)
+
     # after transposing, padded_utters is of dim (max_utter, max_len, batch_size)
     # after transposing, padded_image_rep is of dim (max_utter, max_images, batch_size, image_rep_size)
     # after transposing, padded_target is of dim (max_len, batch_size)
     # after transposing, padded_decoder_input is of dim (max_len, batch_size)
     # after transposing padded_weights is of dim (max_len, batch_size)
-    # print ' padded_weights ', padded_weights[:,0]
-    # print ' padded_weights ', padded_weights[:,1]
-    # print 'decoder_seq_len ', decoder_seq_len
-    # print 'padded weights shape ', padded_weights.shape
+    x
     return padded_utters, padded_image_rep, padded_target, padded_decoder_input, padded_weights
 
 

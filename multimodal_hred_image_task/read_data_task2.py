@@ -122,9 +122,9 @@ def get_dialog_dict(param, is_test=False):
 def get_batch_data(max_len, max_images, image_rep_size, max_utter, max_negs, batch_size, data_dict):
     # get batch_text_dict, batch_image_dict, batch_target_dict from data_dict
     # data_dict is a batch_size sized list of zips(batch_text_dict, batch_image_dict, batch_target)
+
     data_dict = np.asarray(data_dict)
     # converting data dict from a multidimensional list to a numpy matrix in order to carry out the operations below
-    # batch_index_dict is a list of integers of dimension batch_size (will be used later to match the positive and negative data)
 
     batch_text_dict = data_dict[:, 0]
     # batch_text_dict is a multidimensional list integers (word ids) of dimension batch_size * max_utter * max_len
@@ -136,9 +136,11 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, max_negs, bat
     batch_target_pos = list(itertools.chain(*batch_target_pos.tolist()))
 
     batch_target_negs = data_dict[:, 3]
+
     lens = [len(x) for x in batch_target_negs]
+
     batch_mask_negs = data_dict[:, 4]
-    # batch_target is a list of strings of dimension batch_size
+
     if len(data_dict) % batch_size != 0:
         batch_text_dict, batch_image_dict, batch_target_pos, batch_target_negs, batch_mask_negs = check_padding(
             batch_text_dict, batch_image_dict, batch_target_pos, batch_target_negs, batch_mask_negs, max_len,
@@ -148,6 +150,7 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, max_negs, bat
         [[get_image_representation(entry_ijk, image_rep_size) for entry_ijk in data_dict_ij] for data_dict_ij in
          data_dict_i] for data_dict_i in batch_image_dict]
     # batch_image_dict is now transformed to a multidimensional list of image_representations of dimension batch_size * max_utter * max_images * image_rep_size
+
     batch_target_pos = [get_image_representation(entry_i, image_rep_size) for entry_i in batch_target_pos]
 
     # batch_target_negs = [[get_image_representation(entry_ij, image_rep_size) for entry_ij in batch_target_neg] for
@@ -187,10 +190,7 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, max_negs, bat
     # after transposing, batch_target_negs is of dim (max_negs, batch_size, image_rep_size)
     # after transposing, padded_decoder_input is of dim (max_len, batch_size)
     # after transposing padded_weights is of dim (max_len, batch_size)
-    # print ' padded_weights ', padded_weights[:,0]
-    # print ' padded_weights ', padded_weights[:,1]
-    # print 'decoder_seq_len ', decoder_seq_len
-    # print 'padded weights shape ', padded_weights.shape
+
     return padded_utters, padded_image_rep, batch_target_pos, padded_target_negs, padded_mask_negs
 
 

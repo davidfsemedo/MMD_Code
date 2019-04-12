@@ -331,20 +331,32 @@ def run_training(param):
 
 
 def main():
+    # The path to the location of the dataset
     data_dir = '/nas/Datasets/mmd/v2'
+
+    # The path to Target_model folder
     dump_dir = '/home/l.fischer/MMD_Code/Target_model'
+
     image_annoy_dir = '/home/l.fischer/MMD_Code/image_annoy_index'
+
+    # Obtain the system parameters present in params_v2.py
     param = get_params(data_dir, dump_dir, image_annoy_dir)
 
+    # If the datafiles have already been created then simply use them
     if os.path.exists(param['train_data_file']) and os.path.exists(param['valid_data_file']) and os.path.exists(
             param['test_data_file']):
+
         print('dictionary already exists')
         sys.stdout.flush()
+
     else:
+
+        # Create the datafiles and vocabulary file
         get_dialog_dict(param)
 
         print('dictionary formed')
         sys.stdout.flush()
+
     run_training(param)
 
 
