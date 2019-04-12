@@ -136,46 +136,61 @@ class Hierarchical_seq_model():
                                   range(self.max_negs)]
 
     def hierarchical_encoder(self):
-        # enc_text_states = tf.concat(0, self.encoder_text_inputs) ## check
-        # enc_img_states = tf.concat(0, self.encoder_img_inputs) ## check
+
         # self.encoder_text_inputs is of dimension (max_utter, max_len, batch_size)
         # self.encoder_img_inputs is of dimension (max_utter, max_images, batch_size, img_rep_size)
-        n_steps = self.max_len
+
         enc_text_states = self.sentence_encoder(self.encoder_text_inputs)
         # enc_text_states is of dimension (max_utter, batch_size, cell_size)
+
         enc_img_states = self.image_encoder(self.encoder_img_inputs)
         # enc_img_states is of dimension (max_utter, batch_size, (max_len*image_embedding_size))
+
         enc_concat_text_img_states = self.concat_text_image(enc_text_states, enc_img_states)
         # enc_concat_text_img_states is of dimension (max_utter, batch_size, (cell_size+max_images*image_embedding_size))
+
         enc_utter_states = self.utterance_encoder(enc_concat_text_img_states)
         # enc_utter_states is of dimension (cell_size, batch_size)
+
         return enc_utter_states
 
     def image_encoder(self, enc_img_inputs):
+
         # enc_img_inputs would be of dimension (max_utter * max_images * batch_size * img_rep_size)   ## check
         # W is of dimension (image_rep_size, image_embedding_size)
         # b is of dimension (1, image_embedding_size)
+
         enc_img_states = []
+
         with tf.variable_scope(self.enc_scope_img) as scope:
             for i, enc_img_input in enumerate(enc_img_inputs):
+
                 # enc_img_input is of dimension (max_images * batch_size * image_rep_size)
                 enc_img_states_i = []
+
                 for j, inp in enumerate(enc_img_input):
+
                     # inp is of dimension (batch_size * image_rep_size)
                     if i > 0 or j > 0:
                         scope.reuse_variables()
+
                     enc_img_state = tf.matmul(inp, self.W_enc_img) + self.b_enc_img
                     if self.activation is not None:
                         enc_img_state = self.activation(enc_img_state)
+
                     # enc_img_state is of dimension (batch_size * image_embedding_size)
                     enc_img_states_i.append(enc_img_state)
+
                 # enc_img_states_i  is of dimension (max_images * batch_size * image_embedding_size)
                 enc_img_states.append(enc_img_states_i)
+
         # enc_img_states is of dimension (max_utter * max_images * batch_size * image_embedding_size)
         concat_enc_img_states = []
+
         for i in range(0, len(enc_img_states)):
             # enc_img_states[i] is of dimension (max_images * batch_size * image_embedding_size)
             concat_enc_img_states.append(tf.concat(enc_img_states[i], 1))
+
         # concat_enc_img_states the max_utter length list of tensors batch_size * (max_images * images_embedding_size)
         # concat_enc_img_states is of dimension (max_utter * batch_size * (max_images*image_embedding_size))
         return concat_enc_img_states

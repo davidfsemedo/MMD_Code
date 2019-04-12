@@ -11,7 +11,8 @@ from collections import Counter
 import gc
 
 
-class PrepareData():
+class PrepareData:
+
     def __init__(self, max_utter, max_len, max_images, max_negs, start_symbol_index, end_symbol_index, unk_symbol_index,
                  pad_symbol_index, task_type, cutoff=-1):
         logging.basicConfig(level=logging.INFO)
@@ -48,33 +49,41 @@ class PrepareData():
 
     def prepare_data(self, input, vocab_file, vocab_stats_file, output, dialogue_pkl_file, isTrain, isTest=False,
                      test_state=None):
+
         if not os.path.isdir(input) or len(os.listdir(input)) == 0:
             raise Exception("Input file not found")
+
         if not self.task_type == "text" and not self.task_type == "image":
             raise Exception("task_type has to be either text or image, found " + self.task_type)
+
         self.vocab_file = vocab_file
         self.vocab_stats_file = vocab_stats_file
         self.output = output
         self.isTrain = isTrain
+
         if self.task_type == "text":
             self.dialogue_context_text_task_text_file = self.output + "_context_text_task_text.txt"
             self.dialogue_context_image_task_text_file = self.output + "_context_image_task_text.txt"
             self.dialogue_target_text_task_text_file = self.output + "_target_text_task_text.txt"
+
         if self.task_type == "image":
             self.dialogue_context_text_task_image_file = self.output + "_context_text_task_image.txt"
             self.dialogue_context_image_task_image_file = self.output + "_context_image_task_image.txt"
             self.dialogue_target_image_task_image_pos_file = self.output + "_target_image_task_image_pos.txt"
             self.dialogue_target_image_task_image_negs_file = self.output + "_target_image_task_image_negs.txt"
+
         if os.path.isfile(vocab_file):
             print('found pre-existing vocab file ... reusing it')
             create_vocab = False
         else:
             create_vocab = True
         self.read_jsondir(input, isTest, test_state, create_vocab)
+
         if create_vocab:
             self.build_vocab()
         else:
             self.read_vocab()
+
         if create_vocab or not os.path.exists(dialogue_pkl_file):
             if self.task_type == "text":
                 self.binarize_text_corpora(self.dialogue_context_text_task_text_file,
@@ -98,6 +107,7 @@ class PrepareData():
                                 return
         else:
         '''
+
         if self.task_type == "text":
             if os.path.isfile(self.dialogue_context_text_task_text_file):
                 os.remove(self.dialogue_context_text_task_text_file)
@@ -105,6 +115,7 @@ class PrepareData():
                 os.remove(self.dialogue_context_image_task_text_file)
             if os.path.isfile(self.dialogue_target_text_task_text_file):
                 os.remove(self.dialogue_target_text_task_text_file)
+
         if self.task_type == "image":
             if os.path.isfile(self.dialogue_context_text_task_image_file):
                 os.remove(self.dialogue_context_text_task_image_file)
@@ -114,19 +125,24 @@ class PrepareData():
                 os.remove(self.dialogue_target_image_task_image_pos_file)
             if os.path.isfile(self.dialogue_target_image_task_image_negs_file):
                 os.remove(self.dialogue_target_image_task_image_negs_file)
+
         if create_vocab:
             self.word_counter = Counter()
         else:
             self.word_counter = None
+
         for file in os.listdir(json_dir):
             if file.endswith('.json'):
                 self.read_jsonfile(os.path.join(json_dir, file), create_vocab, isTest, test_state)
 
     def pad_or_clip_dialogue(self, dialogue_instance):
+
         dialogue_instance = self.rollout_dialogue(dialogue_instance)
+
         if len(dialogue_instance) > (self.max_utter + 1):
             dialogue_instance_copy = dialogue_instance[-(self.max_utter + 1):]
             return dialogue_instance_copy
+
         elif len(dialogue_instance) < (self.max_utter + 1):
             padded_dialogue_instance = []
             pad_length = self.max_utter + 1 - len(dialogue_instance)
@@ -138,36 +154,46 @@ class PrepareData():
 
     def rollout_dialogue(self, dialogue_instance):
         rolledout_dialogue = []
+
         for instance in dialogue_instance:
             if instance['nlg'] is not None:
                 rolledout_dialogue.append({"nlg": instance['nlg'], "images": None})
+
             if instance['images'] is not None and len(instance['images']) > 0:
                 for image in instance['images']:
                     rolledout_dialogue.append({"images": [image], "nlg": None})
+
         dialogue_instance = rolledout_dialogue
         return rolledout_dialogue
 
     def pad_or_clip_utterance(self, utterance):
+
         if len(utterance) > (self.max_len - 2):
             utterance = utterance[:(self.max_len - 2)]
             utterance.append(self.end_word_symbol)
             utterance.insert(0, self.start_word_symbol)
+
         elif len(utterance) < (self.max_len - 2):
             pad_length = self.max_len - 2 - len(utterance)
             utterance.append(self.end_word_symbol)
             utterance.insert(0, self.start_word_symbol)
             utterance = utterance + [self.pad_symbol] * pad_length
+
         else:
             utterance.append(self.end_word_symbol)
             utterance.insert(0, self.start_word_symbol)
         return utterance
 
     def pad_or_clip_images(self, images):
+
         if len(images) > self.max_images:
             images = images[:self.max_images]
+
         elif len(images) < self.max_images:
+
             pad_length = self.max_images - len(images)
             images = images + [''] * pad_length
+
         return images
 
     def read_jsonfile(self, json_file, create_vocab, is_test, test_state):
@@ -176,22 +202,27 @@ class PrepareData():
             dialogue = json.load(open(json_file))
         except:
             return None
+
         filter(None, dialogue)
         # dialogue_multimodal is a list of training instances, each of len max_utter, and each ending with a system response. Whenever a dialogue has context less than max_utter, it is accordingly padded
         dialogue_vocab = {}
         dialogue_multimodal = []
+
         if self.task_type == "text":
             dialogue_context_text_task_text = []
             dialogue_context_image_task_text = []
             dialogue_target_text_task_text = []
+
         if self.task_type == "image":
             dialogue_context_text_task_image = []
             dialogue_context_image_task_image = []
             dialogue_target_image_task_image_pos = []
             dialogue_target_image_task_image_negs = []
+
         dialogue_instance_multimodal = []
         last_question_type = None
         count = 0
+
         for utterances in dialogue:
 
             if utterances is None or len(utterances) == 0:
@@ -201,6 +232,7 @@ class PrepareData():
                 utterances = [utterances
                               ]
             for utterance in utterances:
+
                 if utterance is None:
                     continue
 
@@ -235,33 +267,43 @@ class PrepareData():
 
                 if create_vocab:
                     self.word_counter.update(nlg_words)
+
                 dialogue_instance_multimodal.append({'images': images, 'nlg': nlg, 'false images': false_images})
+
                 if speaker == "system" and (test_state is None or is_test is False or (
                         last_question_type is not None and test_state is not None and is_test is True and test_state in last_question_type)):
                     last_utterance = dialogue_instance_multimodal[-1]
+
                     if self.task_type == "text" and (last_utterance['nlg'] is None or last_utterance['nlg'] == ""):
                         continue
+
                     if self.task_type == "image" and (
                             (last_utterance['images'] is None or len(last_utterance['images']) == 0) and (
                             last_utterance['false images'] is None or len(last_utterance['false images']) == 0)):
                         continue
+
                     if self.task_type == "image":
                         count = count + 1
 
                     padded_clipped_dialogue = self.pad_or_clip_dialogue(dialogue_instance_multimodal)
+
                     if len(padded_clipped_dialogue) != (self.max_utter + 1):
                         raise Exception('some problem with dialogue instance, len != max_utter+1')
+
                     # dialogue_instance_task_test is a max_utter length list of utterances where the last utterance in the list is the target utterance
                     dialogue_instance_text_context = [x['nlg'] if x['nlg'] is not None else '' for x in
                                                       padded_clipped_dialogue[:-1]]
+
                     # dialogue_instance_task_image is a max_utter length list of image-lists where the last entry in the list is a single image instead of a list and it is the target image
                     dialogue_instance_image_context = [x['images'] if x['images'] is not None else [] for x in
                                                        padded_clipped_dialogue[:-1]]
 
                     if len(dialogue_instance_text_context) != self.max_utter:
                         raise Exception('len(dialogue_instance_text_context)!=self.max_utter')
+
                     if len(dialogue_instance_image_context) != self.max_utter:
                         raise Exception('len(dialogue_instance_image_context)!=self.max_utter')
+
                     if self.task_type == "text":
                         dialogue_target_text = dialogue_instance_multimodal[-1]['nlg']
                         dialogue_instance_context_text_task_text = copy.deepcopy(dialogue_instance_text_context)
@@ -269,13 +311,18 @@ class PrepareData():
                         dialogue_context_text_task_text.append(dialogue_instance_context_text_task_text)
                         dialogue_context_image_task_text.append(dialogue_instance_context_image_task_text)
                         dialogue_target_text_task_text.append(dialogue_target_text)
+
                     if self.task_type == "image":
                         dialogue_target_images_pos = dialogue_instance_multimodal[-1]['images']
                         dialogue_target_images_negs = []
+
                         if dialogue_instance_multimodal[-1]['false images'] is not None:
+
                             for img in dialogue_instance_multimodal[-1]['false images']:
+
                                 if dialogue_target_images_pos and img in dialogue_target_images_pos and len(
                                         dialogue_target_image_task_image_pos) > 0:
+
                                     sampled_img = random.sample(dialogue_target_image_task_image_pos, 1)
                                     if isinstance(sampled_img, list) or isinstance(sampled_img, set):
                                         sampled_img = list(sampled_img)[0]

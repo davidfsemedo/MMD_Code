@@ -1,7 +1,6 @@
 import itertools
 import numpy as np
 import pickle as pkl
-import sys
 import os
 from prepare_data_for_hred import PrepareData
 
@@ -147,9 +146,7 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, max_negs, bat
     #                               batch_target_neg in batch_target_negs])
 
     padded_target_negs = np.array([[get_image_representation("", image_rep_size)] * max_negs] * batch_size)
-    print(f"shape: {padded_target_negs.shape}")
     padded_target_negs.reshape((batch_size, max_negs, image_rep_size))
-
     padded_utters = np.asarray([[xij for xij in dialogue_i] for dialogue_i in batch_text_dict])
     padded_image_rep = np.asarray([[xij for xij in dialogue_i] for dialogue_i in batch_image_dict])
 
