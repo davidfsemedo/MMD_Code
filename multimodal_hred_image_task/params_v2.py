@@ -11,12 +11,12 @@ def get_params(data_dir, dir, image_annoy_dir):
     param['test_output_dir'] = dir + "/test_output/"
     param['vocab_file'] = dir + "/vocab.pkl"
     param['image_annoy_dir'] = image_annoy_dir
-    param['train_data_file'] = dir + "/dump/train_data_file.pkl"
-    param['valid_data_file'] = dir + "/dump/valid_data_file.pkl"
-    param['test_data_file'] = dir + "/dump/test_data_file.pkl"
+    param['train_data_file'] = dir + "/dump/image/train_data_file.pkl"
+    param['valid_data_file'] = dir + "/dump/image/valid_data_file.pkl"
+    param['test_data_file'] = dir + "/dump/image/test_data_file.pkl"
     param['vocab_file'] = dir + "/vocab.pkl"
     param['vocab_stats_file'] = dir + "/vocab_stats.pkl"
-    param['model_path'] = dir + "/model"
+    param['model_path'] = dir + "/model_image"
     param['terminal_op'] = dir + "/terminal_output.txt"
     param['logs_path'] = dir + "/log"
     param['text_embedding_size'] = 512

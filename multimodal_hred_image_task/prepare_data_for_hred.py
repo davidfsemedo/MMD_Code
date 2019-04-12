@@ -222,7 +222,7 @@ class PrepareData():
                 nlg = utterance['utterance']['nlg']
 
                 if nlg is not None:
-                    nlg = nlg.strip().encode('utf-8')
+                    nlg = nlg.strip()  # .encode('utf-8')
 
                 if nlg is None:
                     nlg = ""
@@ -320,6 +320,7 @@ class PrepareData():
                     if len(dialogue_instance) != self.max_utter:
                         raise Exception('len(dialogue_instance_image_context)!=self.max_utter')
                     for images in dialogue_instance:
+
                         if image_context is None:
                             image_context = ",".join(images)
                         else:
@@ -342,6 +343,8 @@ class PrepareData():
                     if len(dialogue_instance) != self.max_utter:
                         raise Exception('len(dialogue_instance_image_context)!=self.max_utter')
                     for images in dialogue_instance:
+                        if len(images) == 1 and None in images:
+                            images = []
                         if image_context is None:
                             image_context = ",".join(images)
                         else:
@@ -349,16 +352,24 @@ class PrepareData():
                     if len(image_context.split("|")) != self.max_utter:
                         raise Exception('len(dialogue_instance_image_context)!=self.max_utter')
                     fp.write(image_context + '\n')
+
             with open(self.dialogue_target_image_task_image_pos_file, 'a') as fp:
+
                 for dialogue_instance in dialogue_target_image_task_image_pos:
-                    fp.write(dialogue_instance + '\n')
+                    if dialogue_instance:
+                        fp.write(dialogue_instance + '\n')
             with open(self.dialogue_target_image_task_image_negs_file, 'a') as fp:
                 for dialogue_instance in dialogue_target_image_task_image_negs:
+                    dialogue_instance = [x for x in dialogue_instance if x is not None]
                     fp.write('|'.join(dialogue_instance) + '\n')
 
     def read_vocab(self):
         assert os.path.isfile(self.vocab_file)
-        self.vocab_dict = {word: word_id for word_id, word in pkl.load(open(self.vocab_file, "r")).iteritems()}
+
+        with open(self.vocab_file, 'rb') as f:
+            vocab_file = pkl.load(f)
+
+        self.vocab_dict = {word: word_id for word_id, word in vocab_file.items()}
         assert self.unk_symbol in self.vocab_dict
         assert self.start_word_symbol in self.vocab_dict
         assert self.end_word_symbol in self.vocab_dict
@@ -544,7 +555,7 @@ class PrepareData():
                                     len(binarized_image_context))
 
                 binarized_target = None
-                if task_type == "text":
+                if self.task_type == "text":
                     utterance = target
                     try:
                         utterance_words = nltk.word_tokenize(utterance)

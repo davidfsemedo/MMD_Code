@@ -1,4 +1,3 @@
-import math
 import sys
 import os
 
@@ -15,27 +14,35 @@ def feeding_dict(model, inputs_text, inputs_image, target_image_pos, target_imag
     """Create the feed dictionary to be fed to the model in the training and validation phases"""
 
     feed_dict = {}
+
     for encoder_text_input, input_text in zip(model.encoder_text_inputs, inputs_text):
         for encoder_text_input_i, input_text_i in zip(encoder_text_input, input_text):
             feed_dict[encoder_text_input_i] = input_text_i
+
     for encoder_img_input, input_image in zip(model.encoder_img_inputs, inputs_image):
         for encoder_img_input_i, input_image_i in zip(encoder_img_input, input_image):
             feed_dict[encoder_img_input_i] = input_image_i
     feed_dict[model.target_img_pos] = target_image_pos
+
     for target_img_neg, target_image_neg in zip(model.target_img_negs, target_image_negs):
         feed_dict[target_img_neg] = target_image_neg
+
     for image_weight, target_image_weight in zip(model.image_weights, target_image_weights):
         feed_dict[image_weight] = target_image_weight
+
     return feed_dict
 
 
 def check_dir(param):
-    '''Checks whether model and logs directtory exists, if not then creates both directories for saving best model and logs.
+    """
+    Checks whether model and logs directtory exists, if not then creates both directories for saving best model and logs.
     Args:
-        param:parameter dictionary.'''
+        param:parameter dictionary.
+    """
 
     if not os.path.exists(param['logs_path']):
         os.makedirs(param['logs_path'])
+
     if not os.path.exists(param['model_path']):
         os.makedirs(param['model_path'])
 
@@ -43,23 +50,42 @@ def check_dir(param):
 def get_loss(cosine_sim_pos, cosine_sim_negs, mask_negs):
     cosine_diff = [(x - cosine_sim_pos).tolist() for x in cosine_sim_negs]
     cosine_diff = np.asarray(cosine_diff)
+
     if cosine_diff.shape != mask_negs.shape:
         raise Exception('cosine_diff.shape !=  mask_negs.shape', cosine_diff.shape, mask_negs.shape)
+
     count_incorrect = sum([1 for x in (cosine_diff * mask_negs).flatten() if x > 0])
     count = mask_negs.sum()
+
     if count_incorrect > count:
         raise Exception('count_incorrect > count')
+
     return float(count_incorrect), float(count)
 
 
 def run_training(param):
+    """
+    Performs the actual training of the model
+    This function encapsulates many other functions involved in the training process of the model
+    :param param: The dictionary object containing the system parameters for the model (obtained from params_v*.get_params())
+    """
+
     def get_train_loss(model, batch_dict, step):
+        """
+        This method starts by obtaining the batch data necessary to feed to the model
+        After obtaining the feed dictionary it feeds it to the model, running the training operation
+        :param model: The model in which to run the operations
+        :param batch_dict: A batch of the training data in which to extract the desired information to build a feed dictionary
+        """
+        # Obtain the variables needed to create the feed dictionary from this batch
         train_batch_text, train_batch_image, batch_image_target_pos, batch_image_target_negs, batch_mask_negs = get_batch_data(
             param['max_len'], param['max_images'], param['image_rep_size'], param['max_utter'], param['max_negs'],
             param['batch_size'], batch_dict)
 
+        # Create the
         feed_dict = feeding_dict(model, train_batch_text, train_batch_image, batch_image_target_pos,
                                  batch_image_target_negs, batch_mask_negs)
+
         batch_mm_loss, batch_cosine_sim_pos, batch_cosine_sim_negs, _ = sess.run(
             [loss, cosine_sim_pos, cosine_sim_negs, train_op], feed_dict=feed_dict)
 
@@ -193,6 +219,12 @@ def run_training(param):
             sum_mm_loss = 0.0
 
             for i in range(n_batches):
+
+                # Print an update every 10 batches
+                if i % 10 == 0:
+                    print('Training: Epoch {}, Batch {}'.format(epoch, i))
+                    sys.stdout.flush()
+
                 overall_step_count = overall_step_count + 1
                 train_batch_dict = train_data[i * param['batch_size']:(i + 1) * param['batch_size']]
                 batch_mm_loss, batch_cosine_sim_pos, batch_cosine_sim_negs, batch_mask_negs = get_train_loss(model,

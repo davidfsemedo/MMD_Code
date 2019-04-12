@@ -1,6 +1,7 @@
 import itertools
 import numpy as np
 import pickle as pkl
+import sys
 import os
 from prepare_data_for_hred import PrepareData
 
@@ -11,12 +12,13 @@ pad_symbol_index = 3
 from annoy import AnnoyIndex
 
 annoyIndex = None
+annoyPkl = None
 
 
 def load_image_representation(image_annoy_dir):
     annoyIndex = AnnoyIndex(4096, metric='euclidean')
     annoyIndex.load(image_annoy_dir + '/annoy.ann')
-    # annoyPkl = pkl.load(open(image_annoy_dir + '/ImageUrlToIndex.pkl', "rb"))
+    annoyPkl = pkl.load(open(image_annoy_dir + '/ImageUrlToIndex.pkl', "rb"))
 
 
 def get_dialog_dict(param, is_test=False):
@@ -138,13 +140,25 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, max_negs, bat
     # batch_image_dict is now transformed to a multidimensional list of image_representations of dimension batch_size * max_utter * max_images * image_rep_size
     batch_target_pos = [get_image_representation(entry_i, image_rep_size) for entry_i in batch_target_pos]
 
-    batch_target_negs = [[get_image_representation(entry_ij, image_rep_size) for entry_ij in batch_target_neg] for
-                         batch_target_neg in batch_target_negs]
+    # batch_target_negs = [[get_image_representation(entry_ij, image_rep_size) for entry_ij in batch_target_neg] for
+    #                     batch_target_neg in batch_target_negs]
+
+    # padded_target_negs = np.array([[get_image_representation(entry, image_rep_size) for entry in batch_target_neg] for
+    #                               batch_target_neg in batch_target_negs])
+
+    padded_target_negs = np.array([[get_image_representation("", image_rep_size)] * max_negs] * batch_size)
+    print(f"shape: {padded_target_negs.shape}")
+    padded_target_negs.reshape((batch_size, max_negs, image_rep_size))
 
     padded_utters = np.asarray([[xij for xij in dialogue_i] for dialogue_i in batch_text_dict])
     padded_image_rep = np.asarray([[xij for xij in dialogue_i] for dialogue_i in batch_image_dict])
-    padded_target_negs = np.asarray([[xij for xij in dialogue_i] for dialogue_i in batch_target_negs])
-    padded_mask_negs = np.asarray([[xij for xij in dialogue_i] for dialogue_i in batch_mask_negs])
+
+    # padded_target_negs = np.asarray([[xij for xij in dialogue_i] for dialogue_i in batch_target_negs])
+
+    # padded_mask_negs = np.array([[xij for xij in dialogue_i] for dialogue_i in batch_mask_negs])
+
+    padded_mask_negs = np.array([[1.0] * max_negs] * batch_size)
+
     # padded_utters,padded_image_rep, padded_target, padded_decoder_input, decoder_seq_len=get_utter_seq_len(batch_text_dict, batch_image_dict, batch_target, max_len, max_images, image_rep_size, max_utter, batch_size)
     # padded_utters is of dim (batch_size, max_utter,  max_len)
     # padded_image_rep is of dim (batch_size, max_utter, max_images, image_rep_size)
@@ -202,7 +216,7 @@ def transpose_utterances(padded_utters, padded_image_rep, padded_target_negs, pa
     try:
         padded_transposed_mask_negs = padded_mask_negs.transpose((1, 0))
     except:
-        raise Exception(' error transposing padded_mask_negs ', padded_mask_negs.shape)
+        raise Exception(' error transposing padded_mask_negs ', padded_mask_negs)
     return padded_transposed_utters, padded_transposed_image_rep, padded_transposed_target_negs, padded_transposed_mask_negs
 
 
