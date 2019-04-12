@@ -1,17 +1,11 @@
-import numpy as np
-import math
 import sys
 import os
+import numpy as np
 from io import StringIO
 import tensorflow as tf
-from tensorflow.python.ops import control_flow_ops
 from tensorflow.contrib import rnn
-from tensorflow.python.ops import variable_scope
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops import nn_ops
-
-from helper_functions import get_decoder_embedding, linear
+from tensorflow.python.ops import control_flow_ops
+from helper_functions import get_decoder_embedding
 from tensorflow.contrib.rnn import EmbeddingWrapper
 
 sys.path.append(os.getcwd())
@@ -111,10 +105,12 @@ class Hierarchical_seq_model():
             [tf.placeholder(tf.float32, [None, self.image_rep_size], name="encoder_img_inputs") for j in
              range(self.max_images)] for i in range(
                 self.max_utter)]  # list of tensor placeholders; altogether of dimension  (max_utter * max_images * image_rep_size * batch_size)
+
         # self.encoder_text_inputs is a max_utter sized list of a max_len sized list of tensors of dimension batch_size
         self.encoder_text_inputs = [
             [tf.placeholder(tf.int32, [None], name="encoder_text_inputs") for i in range(self.max_len)] for j in range(
                 self.max_utter)]  # list of list of tensor placeholders; altogether of dimension batch_size * max_utter * max_len
+
         if self.task_type == "text":
             # self.decoder_text_inputs is a max_len sized list of tensors of dimension batch_size
             self.decoder_text_inputs = [tf.placeholder(tf.int32, [None], name="decoder_text_inputs") for i in range(
@@ -126,6 +122,7 @@ class Hierarchical_seq_model():
             self.feed_previous = tf.placeholder(tf.bool, name='feed_previous')
             # self.target_text is a max_len sized list of tensors of dimension batch_size
             self.target_text = [tf.placeholder(tf.int32, [None], name="target_text") for i in range(self.max_len)]
+
         elif self.task_type == "image":
             # self.target_img is of dimension  batch_size * image_rep_size
             self.target_img_pos = tf.placeholder(tf.float32, [None, self.image_rep_size],
@@ -196,41 +193,54 @@ class Hierarchical_seq_model():
         return concat_enc_img_states
 
     def concat_text_image(self, enc_text_states, enc_img_states):
+
         # enc_text_states is of dimension (max_utter, batch_size, cell_size)
         # enc_img_states is of dimension (max_utter, batch_size, max_images*image_embedding_size)
         concat_text_image = []
+
         for i in range(len(enc_text_states)):
             concat_text_image.append(tf.concat([enc_text_states[i], enc_img_states[i]], 1))
+
         # concat_text_image is of dimension (max_utter, batch_size, cell_size + max_images*image_embedding_size)
         return concat_text_image
 
     def sentence_encoder(self, enc_inputs):
+
         # for the sentence level encoder: enc_inputs is of dimension (max_utter, max_len, batch_size)
         utterance_states = []
+
         with tf.variable_scope(self.enc_scope_text) as scope:
+
             # init_state = self.enc_cells_text.zero_state(self.batch_size, tf.float32)
             for i in range(0, len(enc_inputs)):
                 if i > 0:
                     scope.reuse_variables()
                 # enc_inputs[i] is a max_len sized list of tensor of dimension (batch_size) ################# CHECK IF INDEXING OVER TF VARIABLE IS WORKING
+
                 _, states = rnn.static_rnn(self.enc_cells_text, enc_inputs[i], scope=scope, dtype=tf.float32)
                 # rnn.rnn takes a max_len sized list of tensors of dimension (batch_size * self.text_embedding_size) (after passing through the embedding wrapper)
                 # states is of dimension (batch_size, cell_size)
+
                 utterance_states.append(states)
         # utterance_states is of dimension (max_utter, batch_size, cell_size)
+
         return utterance_states
 
     def utterance_encoder(self, enc_inputs):
+
         # for the utterance level encoder: enc_inputs is of dimension (max_utter, batch_size, cell_size+max_images*image_embedding_size)
         utterance_states = None
+
         with tf.variable_scope(self.enc_scope_utter) as scope:
             # init_state = self.enc_cells_utter.zero_state(self.batch_size, tf.float32)
             # enc_inputs is of dimension (max_utter, batch_size, cell_size+max_images*image_embedding_size)
             # _, states = rnn.rnn(self.enc_cells_utter, enc_inputs, scope=scope, dtype=tf.float32)
             _, states, _ = rnn.static_bidirectional_rnn(self.enc_cells_utter[0], self.enc_cells_utter[1], enc_inputs,
                                                         dtype=tf.float32, scope=scope)
+
             # rnn.rnn takes a max_utter sized list of tensors of dimension (batch_size * cell_size+(max_images*image_embedding_size))
             utterance_states = states
+
         # utterance_states is of dimension (batch_size, cell_size)    
         # self.tf_print(utterance_states)
         return utterance_states

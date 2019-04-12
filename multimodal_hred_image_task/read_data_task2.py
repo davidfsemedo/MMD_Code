@@ -35,77 +35,88 @@ def get_dialog_dict(param, is_test=False):
     max_len = param['max_len']
     max_images = param['max_images']
     max_negs = param['max_negs']
+
     if 'test_state' in param:
         test_state = param['test_state']
     else:
         test_state = None
+
     preparedata = PrepareData(max_utter, max_len, max_images, max_negs, start_symbol_index, end_symbol_index,
                               unk_symbol_index, pad_symbol_index, "image", cutoff=vocab_freq_cutoff)
+
     if os.path.isfile(vocab_file):
         print('found existing vocab file in ' + str(vocab_file) + ', ... reading from there')
+
     if not is_test:
         preparedata.prepare_data(train_dir_loc, vocab_file, vocab_stats_file, os.path.join(dump_dir_loc, "train"),
                                  train_data_file, True, False, None)
+
         preparedata.prepare_data(valid_dir_loc, vocab_file, vocab_stats_file, os.path.join(dump_dir_loc, "valid"),
                                  valid_data_file, False, False, None)
+
     if test_state is not None:
         preparedata.prepare_data(test_dir_loc, vocab_file, vocab_stats_file,
                                  os.path.join(dump_dir_loc + "/test_data_file_state/", "test_" + test_state),
                                  test_data_file, False, True, test_state)
+
     else:
         preparedata.prepare_data(test_dir_loc, vocab_file, vocab_stats_file, os.path.join(dump_dir_loc, "test"),
                                  test_data_file, False, True, test_state)
 
 
-def get_utter_seq_len(dialogue_text_dict, dialogue_image_dict, dialogue_target, max_len, max_images, image_rep_size,
-                      max_utter, batch_size):
-    padded_utters_id = None
-    padded_image_rep = None
-    padded_target = []
-    decode_seq_len = []
-    dummy_image = [0.] * image_rep_size
-    # USE THE BELOW TWO COMMENTED LINES IF START AND END SYMBOL HAS NOT BEEN APPENDED YET
-    # padded_utters_id = np.asarray([[[start_symbol_index]+xij[:max_len]+[end_symbol_index] if len(xij)>max_len else [start_symbol_index]+xij+[end_symbol_index]+[pad_symbol_index]*(max_len-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_text_dict])
-    # padded_image_rep = np.asarray([[xij[:max_images] if len(xij)>max_images else xij+dummy_image*(max_images-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_image_dict])
-    # USE THE BELOW TWO COMMENTED LINES IF START AND END SYMBOL HAS BEEN ALREADY APPENDED
-    # padded_utters_id = np.asarray([[xij[:(max_len-1)]+[end_symbol_index] if len(xij)>max_len else xij+[pad_symbol_index]*(max_len-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_text_dict])
-    # padded_image_rep = np.asarray([[xij[:max_images] if len(xij)>max_images else xij+[dummy_image]*(max_images-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_image_dict])
-    padded_utters_id = np.asarray([[xij for xij in dialogue_i] for dialogue_i in dialogue_text_dict])
-    padded_image_rep = np.asarray([[xij for xij in dialogue_i] for dialogue_i in dialogue_image_dict])
-    # padded_utters_id is of dimension (batch_size, max_utter+1, max_len)
-    # padded_image_rep is of dimension (batch_size, max_utter+1, max_images, image_rep_size)
-
-    # USE THE BELOW COMMENTED LINE IF START AND END SYMBOL HAS NOT BEEN APPENDED YET
-    # padded_target = np.asarray([[start_symbol_index]+xij[:max_len]+[end_symbol_index] if len(xi)>max_len else [start_symbol_index]+xi+[end_symbol_index]+[pad_symbol_index]*(max_len-len(xi)) for xi in dialogue)])
-    # USE THE BELOW COMMENTED LINE IF START AND END SYMBOL HAS BEEN ALREADY APPENDED
-    # padded_target = np.asarray([xi[:(max_len-1)]+[end_symbol_index] if len(xi)>max_len else xi+[pad_symbol_index]*(max_len-len(xi)) for xi in dialogue_target])
-    # padded_target = np.asarray([xi  for xi in dialogue_target])
-    # padded_target is of dimension (batch_size, max_len)
-    # pad_to_target = np.reshape(np.asarray([pad_symbol_index]*batch_size), (batch_size, 1))
-    # pad_to_target is of dimension (batch_size, 1)
-    # print 'padded_target[:,:-1].shape ', padded_target[:,:-1].shape
-    # print 'pad_to_target.shape ',pad_to_target.shape
-    # print 'padded_target[:,:-1].shape ',padded_target[:,:-1].shape
-    # padded_decoder_input = np.concatenate((pad_to_target, padded_target[:,:-1]), axis=1)
-    # padded_decoder_input is of dimension (batch_size, max_len)
-    # padded_utters_id is of dimension (batch_size, max_utter, max_len)
-    # print 'padded_target ', padded_target
-    # print 'np.where(padded_target==end_symbol_index) ', np.where(padded_target==end_symbol_index)
-    # decoder_seq_len = [-1]*batch_size
-    # row, col  = np.where(padded_target==end_symbol_index)
-    # for row_i, col_i in zip(row, col):
-    #	decoder_seq_len[row_i] = col_i
-    # if -1 in decoder_seq_len:
-    #	raise Exception('cannot find end symbol in training dialogue')
-    # decoder_seq_len = np.asarray(decoder_seq_len)
-    # decoder_seq_len = decoder_seq_len + 1 #???????? check if decoder_seq_len=decoder_seq_len+1 is required or not (YES CHECKED WILL BE REQUIRED)
-    # decoder_seq_len is of dimension batch_size
-    # print 'padded_utters_id.shape ',padded_utters_id.shape
-    # print 'padded_image_rep.shape ',padded_image_rep.shape
-    # print 'padded_target.shape ',padded_target.shape
-    # print 'padded_decoder_input.shape ',padded_decoder_input.shape
-    # print 'decoder_seq_len.shape ',decoder_seq_len.shape
-    # return padded_utters_id, padded_image_rep, padded_target, padded_decoder_input, decoder_seq_len
+# def get_utter_seq_len(dialogue_text_dict, dialogue_image_dict, dialogue_target, max_len, max_images, image_rep_size,
+#                       max_utter, batch_size):
+#     padded_utters_id = None
+#     padded_image_rep = None
+#     padded_target = []
+#     decode_seq_len = []
+#     dummy_image = [0.] * image_rep_size
+#
+#     # USE THE BELOW TWO COMMENTED LINES IF START AND END SYMBOL HAS NOT BEEN APPENDED YET
+#     # padded_utters_id = np.asarray([[[start_symbol_index]+xij[:max_len]+[end_symbol_index] if len(xij)>max_len else [start_symbol_index]+xij+[end_symbol_index]+[pad_symbol_index]*(max_len-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_text_dict])
+#     # padded_image_rep = np.asarray([[xij[:max_images] if len(xij)>max_images else xij+dummy_image*(max_images-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_image_dict])
+#
+#     # USE THE BELOW TWO COMMENTED LINES IF START AND END SYMBOL HAS BEEN ALREADY APPENDED
+#     # padded_utters_id = np.asarray([[xij[:(max_len-1)]+[end_symbol_index] if len(xij)>max_len else xij+[pad_symbol_index]*(max_len-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_text_dict])
+#     # padded_image_rep = np.asarray([[xij[:max_images] if len(xij)>max_images else xij+[dummy_image]*(max_images-len(xij)) for xij in dialogue_i] for dialogue_i in dialogue_image_dict])
+#
+#     padded_utters_id = np.asarray([[xij for xij in dialogue_i] for dialogue_i in dialogue_text_dict])
+#     padded_image_rep = np.asarray([[xij for xij in dialogue_i] for dialogue_i in dialogue_image_dict])
+#     # padded_utters_id is of dimension (batch_size, max_utter+1, max_len)
+#     # padded_image_rep is of dimension (batch_size, max_utter+1, max_images, image_rep_size)
+#
+#     # USE THE BELOW COMMENTED LINE IF START AND END SYMBOL HAS NOT BEEN APPENDED YET
+#     # padded_target = np.asarray([[start_symbol_index]+xij[:max_len]+[end_symbol_index] if len(xi)>max_len else [start_symbol_index]+xi+[end_symbol_index]+[pad_symbol_index]*(max_len-len(xi)) for xi in dialogue)])
+#
+#     # USE THE BELOW COMMENTED LINE IF START AND END SYMBOL HAS BEEN ALREADY APPENDED
+#     # padded_target = np.asarray([xi[:(max_len-1)]+[end_symbol_index] if len(xi)>max_len else xi+[pad_symbol_index]*(max_len-len(xi)) for xi in dialogue_target])
+#     # padded_target = np.asarray([xi  for xi in dialogue_target])
+#     # padded_target is of dimension (batch_size, max_len)
+#     # pad_to_target = np.reshape(np.asarray([pad_symbol_index]*batch_size), (batch_size, 1))
+#     # pad_to_target is of dimension (batch_size, 1)
+#     # print 'padded_target[:,:-1].shape ', padded_target[:,:-1].shape
+#     # print 'pad_to_target.shape ',pad_to_target.shape
+#     # print 'padded_target[:,:-1].shape ',padded_target[:,:-1].shape
+#     # padded_decoder_input = np.concatenate((pad_to_target, padded_target[:,:-1]), axis=1)
+#     # padded_decoder_input is of dimension (batch_size, max_len)
+#     # padded_utters_id is of dimension (batch_size, max_utter, max_len)
+#     # print 'padded_target ', padded_target
+#     # print 'np.where(padded_target==end_symbol_index) ', np.where(padded_target==end_symbol_index)
+#     # decoder_seq_len = [-1]*batch_size
+#     # row, col  = np.where(padded_target==end_symbol_index)
+#     # for row_i, col_i in zip(row, col):
+#     #	decoder_seq_len[row_i] = col_i
+#     # if -1 in decoder_seq_len:
+#     #	raise Exception('cannot find end symbol in training dialogue')
+#     # decoder_seq_len = np.asarray(decoder_seq_len)
+#     # decoder_seq_len = decoder_seq_len + 1 #???????? check if decoder_seq_len=decoder_seq_len+1 is required or not (YES CHECKED WILL BE REQUIRED)
+#     # decoder_seq_len is of dimension batch_size
+#     # print 'padded_utters_id.shape ',padded_utters_id.shape
+#     # print 'padded_image_rep.shape ',padded_image_rep.shape
+#     # print 'padded_target.shape ',padded_target.shape
+#     # print 'padded_decoder_input.shape ',padded_decoder_input.shape
+#     # print 'decoder_seq_len.shape ',decoder_seq_len.shape
+#     # return padded_utters_id, padded_image_rep, padded_target, padded_decoder_input, decoder_seq_len
 
 
 def get_batch_data(max_len, max_images, image_rep_size, max_utter, max_negs, batch_size, data_dict):
