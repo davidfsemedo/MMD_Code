@@ -7,6 +7,7 @@ import collections
 import numpy as np
 import pickle as pkl
 from collections import Counter
+import orjson
 
 
 class PrepareData():
@@ -167,8 +168,10 @@ class PrepareData():
     def read_jsonfile(self, json_file, create_vocab, is_test, test_state):
         # print 'json file ', json_file
         try:
-            dialogue = json.load(open(json_file))
-        except:
+            with open(json_file, "rb") as file:
+                dialogue = orjson.loads(file.read())
+                #dialogue = json.load(open(json_file))
+        except json.decoder.JSONDecodeError:
             return None
         filter(None, dialogue)
         # dialogue_multimodal is a list of training instances, each of len max_utter, and each ending with a system response. Whenever a dialogue has context less than max_utter, it is accordingly padded

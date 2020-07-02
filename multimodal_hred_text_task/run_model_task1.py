@@ -2,13 +2,21 @@ import os
 import sys
 import random
 import logging
+import math
+import numpy as np
+import os.path
+import tensorflow as tf
+import _pickle as pkl
+
+# disable deprecation warnings
+# issue: https://github.com/tensorflow/tensorflow/issues/27023
+from tensorflow.python.util import deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 sys.path.append(os.getcwd())
-from params_v2 import *
-import os.path
-from read_data_task1 import *
-from hierarchy_model_text import *
-import tensorflow as tf
+from params_v2 import get_params
+from read_data_task1 import get_batch_data, get_dialog_dict
+from hierarchy_model_text import Hierarchical_seq_model_text
 
 
 def feeding_dict(model, inputs_text, inputs_image, target_text, decoder_text_inputs, text_weights, feed_prev):
@@ -220,10 +228,10 @@ def run_training(param):
         tb_placeholder = tf.placeholder(tf.float16, shape=None)
 
         # Creating summary variables to write to tensorboard
-        tb_training_loss = tf.summary.scalar('Training Loss', tb_placeholder)
-        tb_validation_loss = tf.summary.scalar('Validation Loss', tb_placeholder)
+        tb_training_loss = tf.compat.v1.summary.scalar('Training Loss', tb_placeholder)
+        tb_validation_loss = tf.compat.v1.summary.scalar('Validation Loss', tb_placeholder)
 
-        tb_writer = tf.summary.FileWriter('./tensorboard/')
+        tb_writer = tf.compat.v1.summary.FileWriter('./tensorboard/')
 
         old_model_file = None
 
@@ -332,12 +340,12 @@ def run_training(param):
 
 def main():
     # The path to the location of the dataset
-    data_dir = '/nas/Datasets/mmd/v2'
+    data_dir = '/nas/Datasets/MMD/dataset/v2/'
 
     # The path to Target_model folder
-    dump_dir = '/home/l.fischer/MMD_Code/Target_model'
+    dump_dir = sys.argv[2].strip()
 
-    image_annoy_dir = '/home/l.fischer/MMD_Code/image_annoy_index'
+    image_annoy_dir = '../image_annoy_index/'
 
     # Obtain the system parameters present in params_v2.py
     param = get_params(data_dir, dump_dir, image_annoy_dir)

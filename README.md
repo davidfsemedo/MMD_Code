@@ -25,3 +25,13 @@ In multimodal_hred_text_task/run_predictions.py is implemented a simple server t
 to the model to obtain a response from it and return it to the user. This server can be linked to a chatbot UI in order to implement a replica of the chat application depicted in Saha et. al.
 
 This file provides a useful guide as to how to encode a single user utterance and obtain a prediction for it.
+
+
+
+## Environment setup
+```conda create --name mmd_code python=3.7
+conda install nltk
+conda install tensorflow-gpu=1.15
+pip install annoy
+pip install orjson
+```

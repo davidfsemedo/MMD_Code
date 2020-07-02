@@ -281,10 +281,10 @@ class Hierarchical_seq_model():
             # weights = tf.Variable(tf.random_uniform([self.cell_size, self.decoder_words], -0.1, 0.1), name="weights")
             # biases = tf.Variable(tf.zeros([self.decoder_words]), name="biases")
             max_val = np.sqrt(6. / (self.decoder_words + self.cell_size))
-            weights = tf.get_variable("dec_weights", [self.cell_size, self.decoder_words],
+            weights = tf.compat.v1.get_variable("dec_weights", [self.cell_size, self.decoder_words],
                                       initializer=tf.random_uniform_initializer(-1. * max_val,
                                                                                 max_val))  # For projecting decoder output which is of self.batch_size*self.cell_size to self.batch_size*self.vocab_size.
-            biases = tf.get_variable("dec_biases", [self.decoder_words], initializer=tf.constant_initializer(0.0))
+            biases = tf.compat.v1.get_variable("dec_biases", [self.decoder_words], initializer=tf.constant_initializer(0.0))
 
             def feed_previous_decode(feed_previous_bool):
                 dec_embed, loop_fn = get_decoder_embedding(decoder_inputs, self.decoder_words,

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pickle as pkl
-from params_v2 import *
+from params_v2 import get_params
 from annoy import AnnoyIndex
 from prepare_data_for_hred import PrepareData
 
@@ -16,7 +16,7 @@ annoyIndex = None
 def load_image_representation(image_annoy_dir):
     annoyIndex = AnnoyIndex(4096, metric='euclidean')
 
-    image_annoy_dir = "/home/l.fischer/MMD_Code/image_annoy_index/annoy.ann"
+    image_annoy_dir = os.path.join(image_annoy_dir, "annoy.ann")
     annoyIndex.load(image_annoy_dir)
     # annoyPkl = pkl.load(open(image_annoy_dir + '/ImageUrlToIndex.pkl'))
 
@@ -132,7 +132,7 @@ def get_batch_data(max_len, max_images, image_rep_size, max_utter, batch_size, d
     # after transposing, padded_target is of dim (max_len, batch_size)
     # after transposing, padded_decoder_input is of dim (max_len, batch_size)
     # after transposing padded_weights is of dim (max_len, batch_size)
-    x
+
     return padded_utters, padded_image_rep, padded_target, padded_decoder_input, padded_weights
 
 
@@ -141,7 +141,7 @@ def get_image_representation(image_filename, image_rep_size):
     if image_filename == "":
         return [0.] * image_rep_size
     try:
-        return annoyIndex.get_item_vector(annoyPkl[image_filename])
+        return annoyIndex.get_item_vector(annoyIndex[image_filename])
     except:
         return [0.] * image_rep_size
 

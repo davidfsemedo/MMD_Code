@@ -1,13 +1,16 @@
 import sys
 import os
-
-sys.path.append(os.getcwd())
-import pickle as pkl
+import math
+import numpy as np
 import random
 import os.path
-from params_v2 import *
-from read_data_task2 import *
-from hierarchy_model import *
+import tensorflow as tf
+import _pickle as pkl
+
+sys.path.append(os.getcwd())
+from params_v2 import get_params
+from read_data_task2 import get_batch_data, get_dialog_dict, load_image_representation
+from hierarchy_model import Hierarchical_seq_model
 
 
 def feeding_dict(model, inputs_text, inputs_image, target_image_pos, target_image_negs, target_image_weights):
@@ -344,12 +347,12 @@ def run_training(param):
 
 def main():
     # The path to the location of the dataset
-    data_dir = '/nas/Datasets/mmd/v2'
+    data_dir = '/nas/Datasets/MMD/dataset/v2/'
 
     # The path to Target_model folder
-    dump_dir = '/home/l.fischer/MMD_Code/Target_model'
+    dump_dir = sys.argv[2]
 
-    image_annoy_dir = '/home/l.fischer/MMD_Code/image_annoy_index'
+    image_annoy_dir = '../image_annoy_index/'
 
     # Obtain the system parameters present in params_v2.py
     param = get_params(data_dir, dump_dir, image_annoy_dir)
